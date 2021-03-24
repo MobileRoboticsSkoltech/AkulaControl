@@ -8,6 +8,24 @@
     tools:context=".MainActivity">
 
     <RelativeLayout
+        android:id="@+id/relativeLayout"
+        android:layout_width="50dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="60dp"
+        android:layout_marginEnd="10dp"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.example.akulatest.ConnIndicator
+            android:id="@+id/connIndicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:layout_editor_absoluteX="-55dp"
+            tools:layout_editor_absoluteY="-140dp" />
+    </RelativeLayout>
+
+    <RelativeLayout
         android:id="@+id/relativeLayout2"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
@@ -23,19 +41,67 @@
             android:layout_height="wrap_content" />
     </RelativeLayout>
 
-    <RelativeLayout
-        android:id="@+id/relativeLayout"
-        android:layout_width="50dp"
-        android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+    <com.example.akulatest.SlidePanel
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/sliderPanel"
+        android:orientation="vertical"
+        android:visibility="visible">
 
-        <com.example.akulatest.ConnIndicator
-            android:id="@+id/connIndicator"
-            android:layout_width="wrap_content"
+        <Button
+            android:id="@+id/menuButton"
+            style="@style/Widget.AppCompat.Button"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/open_menu_button"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            app:backgroundTint="@null"
+            app:icon="@android:drawable/arrow_down_float"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <LinearLayout
+            android:id="@+id/menuLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            tools:layout_editor_absoluteX="-55dp"
-            tools:layout_editor_absoluteY="-140dp" />
-    </RelativeLayout>
+            android:background="#2828BC"
+            android:gravity="center"
+            android:orientation="vertical"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:layout_editor_absoluteX="-80dp">
+
+            <EditText
+                android:id="@+id/ipText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:ems="10"
+                android:hint="IP address"
+                android:inputType="textPersonName" />
+
+            <EditText
+                android:id="@+id/portText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:ems="10"
+                android:hint="Port"
+                android:inputType="textPersonName" />
+
+            <Button
+                android:id="@+id/requestButton"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:background="@drawable/request_button"
+                android:text="Request"
+                app:backgroundTint="@null" />
+        </LinearLayout>
+
+    </com.example.akulatest.SlidePanel>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
