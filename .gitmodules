@@ -1,0 +1,3 @@
+[submodule "DesktopServer/lib/dSocket"]
+	path = DesktopServer/lib/dSocket
+	url = https://github.com/Devilox96/dSocket.git
