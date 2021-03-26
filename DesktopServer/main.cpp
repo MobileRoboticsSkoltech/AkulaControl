@@ -1,6 +1,13 @@
 #include <iostream>
-
+//-----------------------------//
+#include "Server.h"
+//-----------------------------//
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    Server AkulaServer(50000, 128);
+
+    while (true) {
+
+    }
+
     return 0;
 }
