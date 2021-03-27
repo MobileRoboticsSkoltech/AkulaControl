@@ -18,6 +18,8 @@ Server::Server(uint16_t tPort, size_t tPacketSize) : mPort(tPort), mPacketSize(t
     mSmartphoneReadThread       = std::async(std::launch::async, &Server::smartphoneReadCallback, this);
     mSmartphoneWriteThread      = std::async(std::launch::async, &Server::smartphoneWriteCallback, this);
     mSmartphoneProcessThread    = std::async(std::launch::async, &Server::smartphoneProcessCallback, this);
+
+    mTimerThread                = std::async(std::launch::async, &Server::timerCallback, this);
 }
 Server::~Server() {
     delete[](mSmartphoneReadBuffer);
@@ -52,6 +54,8 @@ dSocketResult Server::smartphoneReadCallback() {
             }
         }
 
+        ReadTotal = 0;
+
         mSmartphoneReadCV.wait(Lock, [this] {
             return mSmartphoneReadState || mTerminate.load();
         });
@@ -74,6 +78,9 @@ dSocketResult Server::smartphoneReadCallback() {
 dSocketResult Server::smartphoneWriteCallback() {
     uint8_t Packet[mPacketSize];
     std::unique_lock <std::mutex> Lock(mSmartphoneWriteMutex);
+    ssize_t WrittenBytes;
+    size_t WrittenTotal = 0;
+    dSocketResult Result;
 
     while (!mTerminate.load()) {
         mSmartphoneWriteCV.wait(Lock, [this] {
@@ -82,6 +89,27 @@ dSocketResult Server::smartphoneWriteCallback() {
 
         if (mTerminate.load()) {
             ///---TODO: Add proper termination handling---///
+        }
+
+        getSmartphoneWriteBuffer(Packet);
+
+        if (mConnected.load()) {
+            while (WrittenTotal < WrittenBytes) {
+                Result = mSocketUDP -> writeToAddress(Packet, mPacketSize, &WrittenBytes,
+                                                      reinterpret_cast <const sockaddr*>(&mSmartphoneAddr),
+                                                      mSmartphoneAddrLen);
+
+                switch (Result) {
+                    case dSocketResult::SUCCESS:
+                        WrittenTotal += WrittenBytes;
+                        break;
+                    default:
+                        ///---TODO: Add proper termination handling---///
+                        return dSocketResult::READ_ERROR;
+                }
+            }
+
+            WrittenTotal = 0;
         }
     }
 
@@ -255,4 +283,19 @@ bool Server::getSmartphoneWriteBuffer(uint8_t* tBuffer) {
     mSmartphoneWriteBufferCV.notify_one();
 
     return true;
+}
+//-----------------------------//
+void Server::timerCallback() {
+    uint8_t Packet[mPacketSize];
+    SmartphoneHeader Tag = SmartphoneHeader::PING;
+
+    memcpy(Packet, &Tag, 4);
+
+    while (!mTerminate.load()) {
+        if (mConnected.load()) {
+            fillSmartphoneWriteBuffer(Packet);
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
 }

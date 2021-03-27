@@ -37,6 +37,10 @@ public:
 
     bool fillSmartphoneWriteBuffer(const uint8_t* tBuffer);
     bool getSmartphoneWriteBuffer(uint8_t* tBuffer);
+
+    //----------//
+
+    void timerCallback();
 private:
     std::atomic_bool                mTerminate                              = false;
     std::atomic_bool                mConnected                              = false;
@@ -89,7 +93,7 @@ private:
 
     //----------//
 
-    ///---TODO: Add ping timer---///
+    std::future <void>              mTimerThread;
 };
 //-----------------------------//
 #endif
