@@ -16,7 +16,8 @@ enum class SmartphoneHeader {
     REQUEST_CONN,
     JOYSTICK_COORDS,
     PING,
-    STATUS
+    STATUS,
+    INVALID
 };
 //-----------------------------//
 class Server {

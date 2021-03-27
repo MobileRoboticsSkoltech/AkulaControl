@@ -3,7 +3,7 @@
 #include "Server.h"
 //-----------------------------//
 int main() {
-    Server AkulaServer(50000, 128);
+    Server AkulaServer(50000, 32);
 
     while (true) {
 

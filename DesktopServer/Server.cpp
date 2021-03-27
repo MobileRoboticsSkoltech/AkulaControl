@@ -41,9 +41,11 @@ dSocketResult Server::smartphoneReadCallback() {
         while (ReadTotal < mPacketSize) {
             Result = mSocketUDP -> readFromAddress(Packet + ReadTotal, mPacketSize - ReadTotal, &ReadBytes,
                                                    reinterpret_cast <sockaddr*>(&ClientAddr), &ClientAddrLen);
+
             switch (Result) {
                 case dSocketResult::SUCCESS:
                     ReadTotal += ReadBytes;
+                    std::cout << ReadTotal << std::endl;
                     break;
                 case dSocketResult::RECV_TIMEOUT:
                     ReadTotal = 0;
@@ -71,6 +73,7 @@ dSocketResult Server::smartphoneReadCallback() {
         }
 
         fillSmartphoneReadBuffer(Packet);
+        std::cout << "Here" << std::endl;
     }
 
     return dSocketResult::SUCCESS;
@@ -91,11 +94,13 @@ dSocketResult Server::smartphoneWriteCallback() {
             ///---TODO: Add proper termination handling---///
         }
 
+        Lock.unlock();
+
         getSmartphoneWriteBuffer(Packet);
 
         if (mConnected.load()) {
             while (WrittenTotal < WrittenBytes) {
-                Result = mSocketUDP -> writeToAddress(Packet, mPacketSize, &WrittenBytes,
+                Result = mSocketUDP -> writeToAddress(Packet + WrittenTotal, mPacketSize - WrittenTotal, &WrittenBytes,
                                                       reinterpret_cast <const sockaddr*>(&mSmartphoneAddr),
                                                       mSmartphoneAddrLen);
 
@@ -128,6 +133,8 @@ dSocketResult Server::smartphoneProcessCallback() {
         if (mTerminate.load()) {
             ///---TODO: Add proper termination handling---///
         }
+
+        Lock.unlock();
 
         getSmartphoneReadBuffer(Packet);
 
