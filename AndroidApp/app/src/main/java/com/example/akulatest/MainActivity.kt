@@ -114,7 +114,7 @@ class ThreadUDP(tPacketSize: Int) : HandlerThread("UDP") {
                     }
                     MsgUDP.REQUEST_CONN -> {
                         val Buff: ByteBuffer = ByteBuffer.allocate(mPacketSize)
-                        Buff.putInt(1)
+                        Buff.putInt(MsgUDP.REQUEST_CONN.ordinal)
 
                         val Packet = DatagramPacket(Buff.array(), mPacketSize, mIP, mPort)
                         mSocket.send(Packet)

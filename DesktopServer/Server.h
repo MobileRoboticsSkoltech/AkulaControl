@@ -9,6 +9,7 @@
 #include <future>
 #include <condition_variable>
 #include <cstring>
+#include <queue>
 //-----------------------------//
 #include "dSocket/dSocket.h"
 //-----------------------------//
@@ -62,6 +63,9 @@ private:
 
     uint8_t*                        mSmartphoneReadBuffer                   = nullptr;
     uint8_t*                        mSmartphoneWriteBuffer                  = nullptr;
+
+    std::queue <uint8_t*>           mReadQueue;
+    std::queue <uint8_t*>           mWriteQueue;
 
     //----------//
 

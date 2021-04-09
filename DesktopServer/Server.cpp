@@ -7,7 +7,7 @@
 Server::Server(uint16_t tPort, size_t tPacketSize) : mPort(tPort), mPacketSize(tPacketSize) {
     mSocketUDP                  = new dSocket(true);
     mSocketUDP -> init(dSocketProtocol::UDP);
-    mSocketUDP -> setTimeoutOption(1000);
+//    mSocketUDP -> setTimeoutOption(1000);
     mSocketUDP -> finalize(dSocketType::SERVER, tPort);
 
     mSmartphoneReadBuffer       = new uint8_t(tPacketSize);
@@ -42,10 +42,14 @@ dSocketResult Server::smartphoneReadCallback() {
             Result = mSocketUDP -> readFromAddress(Packet + ReadTotal, mPacketSize - ReadTotal, &ReadBytes,
                                                    reinterpret_cast <sockaddr*>(&ClientAddr), &ClientAddrLen);
 
+            char str[INET_ADDRSTRLEN];
+            inet_ntop( AF_INET, &(ClientAddr.sin_addr), str, INET_ADDRSTRLEN );
+
+            std::cout << str << std::endl;
+
             switch (Result) {
                 case dSocketResult::SUCCESS:
                     ReadTotal += ReadBytes;
-                    std::cout << ReadTotal << std::endl;
                     break;
                 case dSocketResult::RECV_TIMEOUT:
                     ReadTotal = 0;
@@ -58,10 +62,6 @@ dSocketResult Server::smartphoneReadCallback() {
 
         ReadTotal = 0;
 
-        mSmartphoneReadCV.wait(Lock, [this] {
-            return mSmartphoneReadState || mTerminate.load();
-        });
-
         if (mTerminate.load()) {
             ///---TODO: Add proper termination handling---///
         }
@@ -73,7 +73,6 @@ dSocketResult Server::smartphoneReadCallback() {
         }
 
         fillSmartphoneReadBuffer(Packet);
-        std::cout << "Here" << std::endl;
     }
 
     return dSocketResult::SUCCESS;
@@ -93,8 +92,6 @@ dSocketResult Server::smartphoneWriteCallback() {
         if (mTerminate.load()) {
             ///---TODO: Add proper termination handling---///
         }
-
-        Lock.unlock();
 
         getSmartphoneWriteBuffer(Packet);
 
@@ -116,6 +113,10 @@ dSocketResult Server::smartphoneWriteCallback() {
 
             WrittenTotal = 0;
         }
+
+        mSmartphoneWriteState = false;
+
+        std::cout << "Written!" << std::endl;
     }
 
     return dSocketResult::SUCCESS;
@@ -134,8 +135,6 @@ dSocketResult Server::smartphoneProcessCallback() {
             ///---TODO: Add proper termination handling---///
         }
 
-        Lock.unlock();
-
         getSmartphoneReadBuffer(Packet);
 
         //----------//
@@ -147,25 +146,29 @@ dSocketResult Server::smartphoneProcessCallback() {
             mSmartphoneAddr     = {};
             mSmartphoneAddrLen  = 0;
 
+            mSmartphoneProcessState = false;
+
             continue;
-        }
+        } else {
+            switch (Tag) {
+                case SmartphoneHeader::REQUEST_CONN:
+                    mConnected.store(true);
+                    break;
+                case SmartphoneHeader::JOYSTICK_COORDS:
+                    ///---TODO: Add coords handling---///
 
-        switch (Tag) {
-            case SmartphoneHeader::REQUEST_CONN:
-                mConnected.store(true);
-                break;
-            case SmartphoneHeader::JOYSTICK_COORDS:
-                ///---TODO: Add coords handling---///
+                    break;
+                case SmartphoneHeader::PING:
+                    ///---TODO: Add ping handling---///
 
-                break;
-            case SmartphoneHeader::PING:
-                ///---TODO: Add ping handling---///
+                    break;
+                case SmartphoneHeader::STATUS:
+                    ///---TODO: Add status handling---///
 
-                break;
-            case SmartphoneHeader::STATUS:
-                ///---TODO: Add status handling---///
+                    break;
+            }
 
-                break;
+            mSmartphoneProcessState = false;
         }
     }
 
@@ -184,11 +187,6 @@ bool Server::fillSmartphoneReadBuffer(const uint8_t* tBuffer) {
     }
 
     memcpy(mSmartphoneReadBuffer, tBuffer, mPacketSize);
-
-    {
-        std::scoped_lock <std::mutex> StateLock(mSmartphoneReadMutex);          //---Lost wake up prevention---//
-        mSmartphoneReadState = false;
-    }
 
     {
         std::scoped_lock <std::mutex> StateLock(mSmartphoneProcessMutex);       //---Lost wake up prevention---//
@@ -215,15 +213,7 @@ bool Server::getSmartphoneReadBuffer(uint8_t* tBuffer) {
 
     memcpy(tBuffer, mSmartphoneReadBuffer, mPacketSize);
 
-    {
-        std::scoped_lock <std::mutex> StateLock(mSmartphoneReadMutex);          //---Lost wake up prevention---//
-        mSmartphoneReadState = true;
-    }
-
-    {
-        std::scoped_lock <std::mutex> StateLock(mSmartphoneProcessMutex);       //---Lost wake up prevention---//
-        mSmartphoneProcessState = false;
-    }
+    mSmartphoneReadBufferReady = false;
 
     mSmartphoneReadCV.notify_one();
     mSmartphoneReadBufferCV.notify_one();
@@ -249,11 +239,6 @@ bool Server::fillSmartphoneWriteBuffer(const uint8_t* tBuffer) {
         mSmartphoneWriteState = true;
     }
 
-    {
-        std::scoped_lock <std::mutex> StateLock(mSmartphoneProcessMutex);       //---Lost wake up prevention---//
-        mSmartphoneProcessState = false;
-    }
-
     mSmartphoneWriteBufferReady = true;
 
     mSmartphoneWriteCV.notify_one();
@@ -274,16 +259,6 @@ bool Server::getSmartphoneWriteBuffer(uint8_t* tBuffer) {
 
     memcpy(tBuffer, mSmartphoneWriteBuffer, mPacketSize);
 
-    {
-        std::scoped_lock <std::mutex> StateLock(mSmartphoneWriteMutex);         //---Lost wake up prevention---//
-        mSmartphoneWriteState = false;
-    }
-
-    {
-        std::scoped_lock <std::mutex> StateLock(mSmartphoneProcessMutex);       //---Lost wake up prevention---//
-        mSmartphoneProcessState = true;
-    }
-
     mSmartphoneWriteBufferReady = false;
 
     mSmartphoneProcessCV.notify_one();
@@ -300,7 +275,8 @@ void Server::timerCallback() {
 
     while (!mTerminate.load()) {
         if (mConnected.load()) {
-            fillSmartphoneWriteBuffer(Packet);
+//            std::cout << "Ping" << std::endl;
+//            fillSmartphoneWriteBuffer(Packet);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
