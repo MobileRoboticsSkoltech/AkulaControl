@@ -32,7 +32,7 @@ dSocketResult Server::smartphoneReadCallback() {
     uint8_t Packet[mPacketSize];
     std::unique_lock <std::mutex> Lock(mSmartphoneReadMutex);
     sockaddr_in ClientAddr {};
-    socklen_t ClientAddrLen;
+    socklen_t ClientAddrLen = sizeof(ClientAddr);
     ssize_t ReadBytes;
     size_t ReadTotal = 0;
     dSocketResult Result;
@@ -41,11 +41,6 @@ dSocketResult Server::smartphoneReadCallback() {
         while (ReadTotal < mPacketSize) {
             Result = mSocketUDP -> readFromAddress(Packet + ReadTotal, mPacketSize - ReadTotal, &ReadBytes,
                                                    reinterpret_cast <sockaddr*>(&ClientAddr), &ClientAddrLen);
-
-            char str[INET_ADDRSTRLEN];
-            inet_ntop( AF_INET, &(ClientAddr.sin_addr), str, INET_ADDRSTRLEN );
-
-            std::cout << str << std::endl;
 
             switch (Result) {
                 case dSocketResult::SUCCESS:
@@ -95,11 +90,20 @@ dSocketResult Server::smartphoneWriteCallback() {
 
         getSmartphoneWriteBuffer(Packet);
 
+
+
+        char str[INET_ADDRSTRLEN];
+        inet_ntop( AF_INET, &(mSmartphoneAddr.sin_addr), str, INET_ADDRSTRLEN );
+
+        std::cout << str << std::endl;
+
         if (mConnected.load()) {
-            while (WrittenTotal < WrittenBytes) {
+            while (WrittenTotal < mPacketSize) {
                 Result = mSocketUDP -> writeToAddress(Packet + WrittenTotal, mPacketSize - WrittenTotal, &WrittenBytes,
                                                       reinterpret_cast <const sockaddr*>(&mSmartphoneAddr),
                                                       mSmartphoneAddrLen);
+
+                std::cout << "Written!" << std::endl;
 
                 switch (Result) {
                     case dSocketResult::SUCCESS:
@@ -116,7 +120,7 @@ dSocketResult Server::smartphoneWriteCallback() {
 
         mSmartphoneWriteState = false;
 
-        std::cout << "Written!" << std::endl;
+
     }
 
     return dSocketResult::SUCCESS;
@@ -275,8 +279,8 @@ void Server::timerCallback() {
 
     while (!mTerminate.load()) {
         if (mConnected.load()) {
-//            std::cout << "Ping" << std::endl;
-//            fillSmartphoneWriteBuffer(Packet);
+            std::cout << "Ping" << std::endl;
+            fillSmartphoneWriteBuffer(Packet);
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
