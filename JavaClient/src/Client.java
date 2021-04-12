@@ -1,7 +1,6 @@
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 //-----------------------------//
 public class Client {
@@ -29,22 +28,17 @@ public class Client {
     //----------//
 
     public void sendRequest() throws IOException {
-        int Header = 0;
+        byte[] Packet = new byte[mPacketSize];
+
+        Header Tag = Header.REQUEST_CONN;
         byte[] Zeros = new byte[mPacketSize - 4];
 
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(bos);
-        oos.writeObject(Header);
-        oos.writeObject(Zeros);
-        oos.flush();
+        ByteBuffer Buffer = ByteBuffer.wrap(Packet);
 
-        byte[] Packet = bos.toByteArray();
-
-        System.out.println("Filling...");
+        Buffer.putInt(Tag.getValue());
+        Buffer.put(Zeros);
 
         fillWriteBuffer(Packet);
-
-        System.out.println("Filled!");
     }
 
     //----------//
@@ -55,8 +49,6 @@ public class Client {
         boolean             NewData     = false;
 
         while (!mTerminate.get()) {
-            ///---TODO: Add waiting---///
-
             if (mTerminate.get()) {
                 ///---TODO: Add proper termination handling---///
             }
@@ -82,10 +74,8 @@ public class Client {
         byte[] Packet = new byte[mPacketSize];
 
         while (!mTerminate.get()) {
-            ///---TODO: Add waiting---///
-
             synchronized (mWriteMonitor) {
-                while (!mWriteState) {
+                while (!mWriteState && !mTerminate.get()) {
                     try {
                         mWriteMonitor.wait();
                     } catch (InterruptedException tExcept)  {
@@ -108,8 +98,6 @@ public class Client {
                     System.err.println("writeFunc: send exception!");
                 }
 
-                System.out.println("Here");
-
                 mWriteState = false;
             }
         }
@@ -118,10 +106,29 @@ public class Client {
         byte[] Packet = new byte[mPacketSize];
 
         while (!mTerminate.get()) {
-            ///---TODO: Add waiting---///
+            synchronized (mProcessMonitor) {
+                while (!mProcessState && !mTerminate.get()) {
+                    try {
+                        mProcessMonitor.wait();
+                    } catch (InterruptedException tExcept)  {
+                        Thread.currentThread().interrupt();
+                        System.err.println("writeFunc: thread interrupted!");
+                    }
+                }
 
-            if (mTerminate.get()) {
-                ///---TODO: Add proper termination handling---///
+                if (mTerminate.get()) {
+                    ///---TODO: Add proper termination handling---///
+                }
+
+                getReadBuffer(Packet);
+
+                ByteBuffer Buffer = ByteBuffer.wrap(Packet);
+
+                int Tag = Buffer.getInt();
+
+                System.out.println(Integer.reverseBytes(Tag));
+
+                mProcessState = false;
             }
         }
     }
