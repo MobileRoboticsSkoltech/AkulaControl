@@ -27,7 +27,7 @@ public class Client {
 
     //----------//
 
-    public void sendRequest() throws IOException {
+    public void sendRequest() {
         byte[] Packet = new byte[mPacketSize];
 
         Header Tag = Header.REQUEST_CONN;
@@ -104,6 +104,7 @@ public class Client {
     }
     void processFunc() {
         byte[] Packet = new byte[mPacketSize];
+        Header Tag;
 
         while (!mTerminate.get()) {
             synchronized (mProcessMonitor) {
@@ -124,9 +125,30 @@ public class Client {
 
                 ByteBuffer Buffer = ByteBuffer.wrap(Packet);
 
-                int Tag = Buffer.getInt();
+                Tag = Header.fromInt(Integer.reverseBytes(Buffer.getInt()));
 
-                System.out.println(Integer.reverseBytes(Tag));
+                switch (Tag) {
+                    case REQUEST_CONN:
+                    case JOYSTICK_COORDS:
+                        break;
+                    case PING:
+                        byte[] PingPacket = new byte[mPacketSize];
+
+                        Header PingTag = Header.PING;
+                        byte[] Zeros = new byte[mPacketSize - 4];
+
+                        ByteBuffer PingBuffer = ByteBuffer.wrap(PingPacket);
+
+                        PingBuffer.putInt(Integer.reverseBytes(PingTag.getValue()));
+                        PingBuffer.put(Zeros);
+
+                        fillWriteBuffer(PingPacket);
+
+                        break;
+                    case STATUS:
+                        break;
+                    case INVALID:
+                }
 
                 mProcessState = false;
             }
@@ -230,7 +252,7 @@ public class Client {
                 return false;
             }
 
-            System.arraycopy(tBuffer, 0, mWriteBuffer, 0, mPacketSize);
+            System.arraycopy(mWriteBuffer, 0, tBuffer, 0, mPacketSize);
 
             mWriteBufferState = false;
             mWriteBufferMonitor.notifyAll();

@@ -4,10 +4,11 @@
 //-----------------------------//
 #include "Server.h"
 //-----------------------------//
-Server::Server(uint16_t tPort, size_t tPacketSize) : mPort(tPort), mPacketSize(tPacketSize) {
+Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) :
+                mPort(tPort), mPacketSize(tPacketSize), mTimeoutMs(tConnTimeout) {
     mSocketUDP                  = new dSocket(true);
     mSocketUDP -> init(dSocketProtocol::UDP);
-//    mSocketUDP -> setTimeoutOption(1000);
+    mSocketUDP -> setTimeoutOption(1000);
     mSocketUDP -> finalize(dSocketType::SERVER, tPort);
 
     mSmartphoneReadBuffer       = new uint8_t(tPacketSize);
@@ -65,6 +66,10 @@ dSocketResult Server::smartphoneReadCallback() {
             std::scoped_lock <std::mutex> SmartphoneLock(mSmartphoneMutex);
             mSmartphoneAddr = ClientAddr;
             mSmartphoneAddrLen = ClientAddrLen;
+        } else {
+            if (ClientAddr.sin_addr.s_addr != mSmartphoneAddr.sin_addr.s_addr) {
+                continue;
+            }
         }
 
         fillSmartphoneReadBuffer(Packet);
@@ -89,13 +94,6 @@ dSocketResult Server::smartphoneWriteCallback() {
         }
 
         getSmartphoneWriteBuffer(Packet);
-
-
-
-        char str[INET_ADDRSTRLEN];
-        inet_ntop( AF_INET, &(mSmartphoneAddr.sin_addr), str, INET_ADDRSTRLEN );
-
-        std::cout << str << std::endl;
 
         if (mConnected.load()) {
             while (WrittenTotal < mPacketSize) {
@@ -163,6 +161,7 @@ dSocketResult Server::smartphoneProcessCallback() {
 
                     break;
                 case SmartphoneHeader::PING:
+                    std::cout << "Ping" << std::endl;
                     ///---TODO: Add ping handling---///
 
                     break;
@@ -170,7 +169,11 @@ dSocketResult Server::smartphoneProcessCallback() {
                     ///---TODO: Add status handling---///
 
                     break;
+                case SmartphoneHeader::INVALID:
+                    break;
             }
+
+            mSmartphoneLastPacketTime = std::chrono::system_clock::now();
 
             mSmartphoneProcessState = false;
         }
@@ -274,12 +277,21 @@ bool Server::getSmartphoneWriteBuffer(uint8_t* tBuffer) {
 void Server::timerCallback() {
     uint8_t Packet[mPacketSize];
     SmartphoneHeader Tag = SmartphoneHeader::PING;
+    std::chrono::duration <double> Dur {};
 
     memcpy(Packet, &Tag, 4);
 
     while (!mTerminate.load()) {
         if (mConnected.load()) {
-            std::cout << "Ping" << std::endl;
+            Dur = std::chrono::system_clock::now() - mSmartphoneLastPacketTime;
+
+            if (Dur.count() * 1000 > mTimeoutMs) {
+                mConnected.store(false);
+
+                mSmartphoneAddr     = {};
+                mSmartphoneAddrLen  = 0;
+            }
+
             fillSmartphoneWriteBuffer(Packet);
         }
 
