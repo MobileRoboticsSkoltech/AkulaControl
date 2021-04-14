@@ -16,14 +16,18 @@ import java.nio.ByteBuffer
 //-----------------------------//
 enum class MsgUDP {
     REQUEST_CONN,
-    SEND_COORDS,
+    JOYSTICK_COORDS,
+    PING,
+    STATUS,
     INVALID;
 
     companion object {
         fun fromInt(tVal: Int): MsgUDP {
             when (tVal) {
                 0 -> return REQUEST_CONN
-                1 -> return SEND_COORDS
+                1 -> return JOYSTICK_COORDS
+                2 -> return PING
+                3 -> return STATUS
             }
 
             return INVALID
@@ -36,7 +40,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val myThread = ThreadUDP()
+        val myThread = ThreadUDP(32)
         myThread.start()
         val Joy = findViewById<Joystick>(R.id.joystick)
         val IpLine = findViewById<EditText>(R.id.ipText)
@@ -77,7 +81,7 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-class ThreadUDP : HandlerThread("UDP") {
+class ThreadUDP(tPacketSize: Int) : HandlerThread("UDP") {
     private var mHandler:       Handler?            = null
     private var mSocket:        DatagramSocket      = DatagramSocket()
     var mCoordsObtainState:     Boolean             = true
@@ -85,33 +89,34 @@ class ThreadUDP : HandlerThread("UDP") {
     private var mIP:            InetAddress         = InetAddress.getByName("127.0.0.1")
     private var mPort:          Int                 = 50000
 
+    private var mPacketSize:    Int                 = tPacketSize
+
     override fun onLooperPrepared() {
         super.onLooperPrepared()
         mHandler = object : Handler(looper) {
             override fun handleMessage(tMsg: Message) {
                 super.handleMessage(tMsg)
                 when (MsgUDP.fromInt(tMsg.what)) {
-                    MsgUDP.SEND_COORDS -> {
+                    MsgUDP.JOYSTICK_COORDS -> {
                         val Bund = tMsg.data
                         val Floats = Bund.getFloatArray("Coords")
-                        val Buff: ByteBuffer = ByteBuffer.allocate(8)
+                        val Buff: ByteBuffer = ByteBuffer.allocate(mPacketSize)
 
                         Floats?.get(0)?.let { Buff.putFloat(it) }
                         Floats?.get(1)?.let { Buff.putFloat(it) }
 
-                        val Packet = DatagramPacket(Buff.array(), 8, mIP, mPort)
+                        val Packet = DatagramPacket(Buff.array(), mPacketSize, mIP, mPort)
 
                         mSocket.send(Packet)
                         mCoordsObtainState = false
-                        println("Here")
                         Thread.sleep(20)
                         mCoordsObtainState = true
                     }
                     MsgUDP.REQUEST_CONN -> {
-                        val Buff: ByteBuffer = ByteBuffer.allocate(8)
-                        Buff.putInt(1)
+                        val Buff: ByteBuffer = ByteBuffer.allocate(mPacketSize)
+                        Buff.putInt(MsgUDP.REQUEST_CONN.ordinal)
 
-                        val Packet = DatagramPacket(Buff.array(), 8, mIP, mPort)
+                        val Packet = DatagramPacket(Buff.array(), mPacketSize, mIP, mPort)
                         mSocket.send(Packet)
                     }
                     else -> {}
@@ -128,7 +133,7 @@ class ThreadUDP : HandlerThread("UDP") {
                 val Bund = Bundle(1)
                 Bund.putFloatArray("Coords", floatArrayOf(tPosX, tPosY))
                 Msg.data = Bund
-                Msg.what = MsgUDP.SEND_COORDS.ordinal
+                Msg.what = MsgUDP.JOYSTICK_COORDS.ordinal
 
                 mHandler?.sendMessage(Msg)
             }
