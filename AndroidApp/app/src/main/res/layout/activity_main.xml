@@ -17,7 +17,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.example.akulatest.ConnIndicator
+        <com.example.androidapp.ConnIndicator
             android:id="@+id/connIndicator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -35,13 +35,13 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent">
 
-        <com.example.akulatest.Joystick
+        <com.example.androidapp.Joystick
             android:id="@+id/joystick"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </RelativeLayout>
 
-    <com.example.akulatest.SlidePanel
+    <com.example.androidapp.SlidePanel
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/sliderPanel"
@@ -102,6 +102,6 @@
                 app:backgroundTint="@null" />
         </LinearLayout>
 
-    </com.example.akulatest.SlidePanel>
+    </com.example.androidapp.SlidePanel>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

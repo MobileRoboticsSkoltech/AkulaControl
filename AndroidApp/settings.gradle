@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name = "AkulaTest"
+rootProject.name = "AndroidApp"
