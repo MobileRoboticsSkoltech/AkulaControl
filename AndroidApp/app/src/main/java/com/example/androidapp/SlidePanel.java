@@ -87,9 +87,9 @@ public class SlidePanel extends ViewGroup {
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent tEvent) {
-        int Action = tEvent.getAction();
+        int Action = tEvent.getActionMasked();
 
-        if (Action != MotionEvent.ACTION_DOWN) {
+        if (!mDragging && Action != MotionEvent.ACTION_DOWN) {
             mDragHelper.cancel();
             return super.onInterceptTouchEvent(tEvent);
         }
@@ -101,16 +101,16 @@ public class SlidePanel extends ViewGroup {
 
         float y = tEvent.getY();
         boolean interceptTap = false;
+        int slop = mDragHelper.getTouchSlop();
 
         switch (Action) {
             case MotionEvent.ACTION_DOWN:
                 mInitialMotionY = y;
-                interceptTap = mDragHelper.isViewUnder(mOpenSlider, (int)getX(), (int)getY());
+                interceptTap = mDragHelper.isViewUnder(mOpenSlider, (int)tEvent.getX(), (int)tEvent.getY());
 
                 break;
             case MotionEvent.ACTION_MOVE:
                 float ady = Math.abs(y - mInitialMotionY);
-                int slop = mDragHelper.getTouchSlop();
 
                 if (ady > slop) {
                     mDragHelper.cancel();
@@ -132,8 +132,6 @@ public class SlidePanel extends ViewGroup {
         int Action = tEvent.getAction();
         float y = tEvent.getY();
         boolean isHeaderViewUnder = mDragHelper.isViewUnder(mOpenSlider, (int)getX(), (int)y);
-
-        System.out.println(isHeaderViewUnder);
 
         switch (Action) {
             case MotionEvent.ACTION_DOWN:
@@ -231,6 +229,8 @@ public class SlidePanel extends ViewGroup {
     private OnSlideListener         mListener                       = null;
 
     //----------//
+
+    private boolean                 mDragging                       = false;
 
     private final ViewDragHelper    mDragHelper;
     private View                    mOpenSlider;
