@@ -1,33 +1,76 @@
 package com.example.androidapp;
+//-----------------------------//
+import android.os.Build;
+import android.os.Message;
+
+import androidx.annotation.RequiresApi;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.time.Duration;
+import java.time.LocalTime;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 //-----------------------------//
 public class Client {
-    Client(String tAddress, int tPort, int tPacketSize) throws SocketException, UnknownHostException {
-        mAddress        = InetAddress.getByName(tAddress);
-        mPort           = tPort;
+    public Client(int tPacketSize, int tConnTimeout, android.os.Handler tHandler) {
         mPacketSize     = tPacketSize;
-
-        mSocket         = new DatagramSocket();
+        mTimeoutMs      = tConnTimeout;
+        mHandler        = tHandler;
 
         mReadBuffer     = new byte[tPacketSize];
         mWriteBuffer    = new byte[tPacketSize];
-
-        //----------//
-
-        mSocket.setSoTimeout(1000);
-
-        mReadThread.start();
-        mWriteThread.start();
-        mProcessThread.start();
 
         mTimerThread.start();
     }
 
     //----------//
+
+    public void init(String tAddress, int tPort) throws SocketException, UnknownHostException {
+        mAddress            = InetAddress.getByName(tAddress);
+        mPort               = tPort;
+
+        mSocket             = new DatagramSocket();
+
+        mSocket.setSoTimeout(1000);
+
+        mReadThread         = new Thread(this::readFunc);
+        mWriteThread        = new Thread(this::writeFunc);
+        mProcessThread      = new Thread(this::processFunc);
+
+        mReadThread.start();
+        mWriteThread.start();
+        mProcessThread.start();
+
+        mRunning = true;
+    }
+
+    public void close() {
+        mTerminate.set(true);
+        signalAll();
+
+        try {
+            mReadThread.join();
+            mWriteThread.join();
+            mProcessThread.join();
+        } catch (InterruptedException ignored) {
+        }
+
+        mSocket.close();
+
+        mTerminate.set(false);
+
+        mRunning = false;
+    }
+
+    public void shutDown() throws InterruptedException {
+        mTerminate.set(true);
+        mShutDown.set(true);
+        signalAll();
+
+        mTimerThread.join();
+    }
 
     public void sendRequest() {
         byte[] Packet = new byte[mPacketSize];
@@ -43,35 +86,42 @@ public class Client {
         fillWriteBuffer(Packet);
     }
 
+    public boolean isRunning() {
+        return mRunning;
+    }
+
     //----------//
 
     void readFunc() {
         byte[]              Packet      = new byte[mPacketSize];
         DatagramPacket      PacketUDP   = new DatagramPacket(Packet, Packet.length);
-        boolean             NewData     = false;
+        boolean             NewData     = false;    //---Do I really need this?---//
 
-        while (!mTerminate.get()) {
-            if (mTerminate.get()) {
-                ///---TODO: Add proper termination handling---///
+        while (!NewData && !mTerminate.get()) {
+            try {
+                mSocket.receive(PacketUDP);
+                NewData = true;
+            } catch (SocketTimeoutException tExcept) {
+                System.err.println("readFunc: receive timeout!");
+                continue;
+            } catch (IOException tExcept) {
+                System.err.println("readFunc: receive exception!");
+                tExcept.printStackTrace();
+
+                mShutDown.set(true);
+                signalAll();
+
+                return;
             }
 
-            while (!NewData) {
-                try {
-                    mSocket.receive(PacketUDP);
-                    NewData = true;
-                } catch (SocketTimeoutException tExcept) {
-                    System.err.println("readFunc: receive timeout!");
-                } catch (IOException tExcept) {
-                    System.err.println("readFunc: receive exception!");
-                }
+            if (!fillReadBuffer(Packet)) {
+                return;
             }
 
-            System.out.println("Ping!");
-
-            fillReadBuffer(Packet);
             NewData = false;
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
     void writeFunc() {
         byte[] Packet = new byte[mPacketSize];
 
@@ -83,14 +133,27 @@ public class Client {
                     } catch (InterruptedException tExcept)  {
                         Thread.currentThread().interrupt();
                         System.err.println("writeFunc: thread interrupted!");
+
+                        mShutDown.set(true);
+                        signalAll();
+
+                        return;
                     }
                 }
 
                 if (mTerminate.get()) {
-                    ///---TODO: Add proper termination handling---///
+                    return;
                 }
 
-                getWriteBuffer(Packet);
+                if (mConnected.get()) {
+                    synchronized (mTimerMonitor) {
+                        mLastPacketTime = LocalTime.now();
+                    }
+                }
+
+                if (!getWriteBuffer(Packet)) {
+                    return;
+                }
 
                 DatagramPacket PacketUDP = new DatagramPacket(Packet, Packet.length, mAddress, mPort);
 
@@ -98,12 +161,18 @@ public class Client {
                     mSocket.send(PacketUDP);
                 } catch (IOException tExcept) {
                     System.err.println("writeFunc: send exception!");
+
+                    mShutDown.set(true);
+                    signalAll();
+
+                    return;
                 }
 
                 mWriteState = false;
             }
         }
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
     void processFunc() {
         byte[] Packet = new byte[mPacketSize];
         Header Tag;
@@ -116,24 +185,39 @@ public class Client {
                     } catch (InterruptedException tExcept)  {
                         Thread.currentThread().interrupt();
                         System.err.println("writeFunc: thread interrupted!");
+
+                        mShutDown.set(true);
+                        signalAll();
+
+                        return;
                     }
                 }
 
                 if (mTerminate.get()) {
-                    ///---TODO: Add proper termination handling---///
+                    return;
                 }
 
-                getReadBuffer(Packet);
+                if (!getReadBuffer(Packet)) {
+                    return;
+                }
 
                 ByteBuffer Buffer = ByteBuffer.wrap(Packet);
 
                 Tag = Header.fromInt(Integer.reverseBytes(Buffer.getInt()));
 
-                switch (Tag) {
+                switch (Objects.requireNonNull(Tag)) {
                     case REQUEST_CONN:
                     case JOYSTICK_COORDS:
                         break;
                     case PING:
+                        if (!mConnected.get()) {
+                            mConnected.set(true);
+
+                            synchronized (mTimerMonitor) {
+                                mLastPacketTime = LocalTime.now();
+                            }
+                        }
+
                         byte[] PingPacket = new byte[mPacketSize];
 
                         Header PingTag = Header.PING;
@@ -144,7 +228,14 @@ public class Client {
                         PingBuffer.putInt(Integer.reverseBytes(PingTag.getValue()));
                         PingBuffer.put(Zeros);
 
-                        fillWriteBuffer(PingPacket);
+                        if (!fillWriteBuffer(PingPacket)) {
+                            return;
+                        }
+
+                        Message Msg = new Message();
+                        Msg.what = Header.PING.getValue();
+
+                        mHandler.sendMessage(Msg);
 
                         break;
                     case STATUS:
@@ -167,6 +258,11 @@ public class Client {
                 } catch (InterruptedException tExcept)  {
                     Thread.currentThread().interrupt();
                     System.err.println("fillReadBuffer: thread interrupted!");
+
+                    mShutDown.set(true);
+                    signalAll();
+
+                    return false;
                 }
             }
 
@@ -195,6 +291,11 @@ public class Client {
                 } catch (InterruptedException tExcept)  {
                     Thread.currentThread().interrupt();
                     System.err.println("fillReadBuffer: thread interrupted!");
+
+                    mShutDown.set(true);
+                    signalAll();
+
+                    return false;
                 }
             }
 
@@ -219,6 +320,11 @@ public class Client {
                 } catch (InterruptedException tExcept)  {
                     Thread.currentThread().interrupt();
                     System.err.println("fillWriteBuffer: thread interrupted!");
+
+                    mShutDown.set(true);
+                    signalAll();
+
+                    return false;
                 }
             }
 
@@ -247,6 +353,11 @@ public class Client {
                 } catch (InterruptedException tExcept)  {
                     Thread.currentThread().interrupt();
                     System.err.println("fillWriteBuffer: thread interrupted!");
+
+                    mShutDown.set(true);
+                    signalAll();
+
+                    return false;
                 }
             }
 
@@ -265,48 +376,114 @@ public class Client {
 
     //----------//
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     void timerFunc() {
-        System.out.println("Timer");
+        while (true) {
+            synchronized (mTimerMonitor) {
+                if (mConnected.get() && Duration.between(mLastPacketTime, LocalTime.now()).toMillis() > mTimeoutMs) {
+                    mConnected.set(false);
+                    close();
+
+                    Message Msg = new Message();
+                    Msg.what = Header.DISCONNECTED.getValue();
+
+                    mHandler.sendMessage(Msg);
+                }
+            }
+
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException tExcept) {
+                mShutDown.set(true);
+                signalAll();
+            }
+
+            if (mShutDown.get()) {
+                try {
+                    mReadThread.join();
+                    mWriteThread.join();
+                    mProcessThread.join();
+                } catch (InterruptedException tExcept) {
+                    return;
+                }
+
+                mSocket.close();
+
+                return;
+            }
+        }
     }
 
     //----------//
 
-    private AtomicBoolean       mTerminate                  = new AtomicBoolean(false);
-    private AtomicBoolean       mConnected                  = new AtomicBoolean(false);
+    void signalAll() {
+        synchronized (mWriteMonitor) {
+            mWriteMonitor.notifyAll();
+        }
+
+        synchronized (mProcessMonitor) {
+            mProcessMonitor.notifyAll();
+        }
+
+        synchronized (mReadBufferMonitor) {
+            mReadBufferMonitor.notifyAll();
+        }
+
+        synchronized (mWriteBufferMonitor) {
+            mWriteBufferMonitor.notifyAll();
+        }
+    }
 
     //----------//
 
-    private DatagramSocket      mSocket;
-
-    private final int           mPort;
-    private final InetAddress   mAddress;
+    private final android.os.Handler    mHandler;
 
     //----------//
 
-    private Integer             mPacketSize;
+    private final AtomicBoolean         mTerminate                  = new AtomicBoolean(false);
+    private final AtomicBoolean         mConnected                  = new AtomicBoolean(false);
+    private final AtomicBoolean         mShutDown                   = new AtomicBoolean(false);
 
-    private byte[]              mReadBuffer;
-    private byte[]              mWriteBuffer;
+    private boolean                     mRunning                    = false;
 
-    //----------//
-
-    private final Thread        mReadThread                 = new Thread(this::readFunc);
-    private final Thread        mWriteThread                = new Thread(this::writeFunc);
-    private final Thread        mProcessThread              = new Thread(this::processFunc);
-
-    private final Thread        mTimerThread                = new Thread(this::timerFunc);
-
-    private final Object        mWriteMonitor               = new Object();
-    private final Object        mProcessMonitor             = new Object();
-
-    private boolean             mWriteState                 = false;
-    private boolean             mProcessState               = false;
+    LocalTime                           mLastPacketTime;
+    int                                 mTimeoutMs;
 
     //----------//
 
-    private final Object        mReadBufferMonitor          = new Object();
-    private final Object        mWriteBufferMonitor         = new Object();
+    private DatagramSocket              mSocket;
 
-    private boolean             mReadBufferState            = false;
-    private boolean             mWriteBufferState           = false;
+    private int                         mPort;
+    private InetAddress                 mAddress;
+
+    //----------//
+
+    private final Integer               mPacketSize;
+
+    private final byte[]                mReadBuffer;
+    private final byte[]                mWriteBuffer;
+
+    //----------//
+
+    private Thread                      mReadThread;
+    private Thread                      mWriteThread;
+    private Thread                      mProcessThread;
+
+    private final Thread                mTimerThread                = new Thread(this::timerFunc);
+
+    private final Object                mWriteMonitor               = new Object();
+    private final Object                mProcessMonitor             = new Object();
+
+    private boolean                     mWriteState                 = false;
+    private boolean                     mProcessState               = false;
+
+    private final Object                mTimerMonitor               = new Object();
+
+    //----------//
+
+    private final Object                mReadBufferMonitor          = new Object();
+    private final Object                mWriteBufferMonitor         = new Object();
+
+    private boolean                     mReadBufferState            = false;
+    private boolean                     mWriteBufferState           = false;
 }

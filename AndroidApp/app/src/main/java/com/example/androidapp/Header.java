@@ -5,7 +5,8 @@ public enum Header {
     JOYSTICK_COORDS(1),
     PING(2),
     STATUS(3),
-    INVALID(4);
+    INVALID(4),
+    DISCONNECTED(5);
 
     private final int mValue;
 
@@ -24,10 +25,11 @@ public enum Header {
             return STATUS;
         } else if (tValue == 4) {
             return INVALID;
+        } else if (tValue == 5) {
+            return DISCONNECTED;
         } else {
             return null;
         }
-
     }
 
     public int getValue() {
