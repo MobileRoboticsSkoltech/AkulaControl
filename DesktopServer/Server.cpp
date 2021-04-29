@@ -157,7 +157,13 @@ dSocketResult Server::smartphoneProcessCallback() {
                     mConnected.store(true);
                     break;
                 case SmartphoneHeader::JOYSTICK_COORDS:
-                    ///---TODO: Add coords handling---///
+                    float PosX;
+                    float PosY;
+
+                    memcpy(&PosX, Packet + 4, 4);
+                    memcpy(&PosY, Packet + 8, 4);
+
+                    std::cout << PosX << " : " << PosY << std::endl;
 
                     break;
                 case SmartphoneHeader::PING:

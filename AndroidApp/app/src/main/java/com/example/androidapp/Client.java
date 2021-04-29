@@ -2,12 +2,14 @@ package com.example.androidapp;
 //-----------------------------//
 import android.os.Build;
 import android.os.Message;
+import android.os.SystemClock;
 
 import androidx.annotation.RequiresApi;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.time.Duration;
 import java.time.LocalTime;
 import java.util.Objects;
@@ -79,8 +81,26 @@ public class Client {
         byte[] Zeros = new byte[mPacketSize - 4];
 
         ByteBuffer Buffer = ByteBuffer.wrap(Packet);
+        Buffer.order(ByteOrder.LITTLE_ENDIAN);
 
         Buffer.putInt(Tag.getValue());
+        Buffer.put(Zeros);
+
+        fillWriteBuffer(Packet);
+    }
+
+    public void sendCoords(float tPosX, float tPosY) {
+        byte[] Packet = new byte[mPacketSize];
+
+        Header Tag = Header.JOYSTICK_COORDS;
+        byte[] Zeros = new byte[mPacketSize - 12];
+
+        ByteBuffer Buffer = ByteBuffer.wrap(Packet);
+        Buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        Buffer.putInt(Tag.getValue());
+        Buffer.putFloat(tPosX);
+        Buffer.putFloat(tPosY);
         Buffer.put(Zeros);
 
         fillWriteBuffer(Packet);
@@ -232,7 +252,7 @@ public class Client {
                             return;
                         }
 
-                        Message Msg = new Message();
+                        Message Msg = mHandler.obtainMessage();
                         Msg.what = Header.PING.getValue();
 
                         mHandler.sendMessage(Msg);
@@ -384,7 +404,7 @@ public class Client {
                     mConnected.set(false);
                     close();
 
-                    Message Msg = new Message();
+                    Message Msg = mHandler.obtainMessage();
                     Msg.what = Header.DISCONNECTED.getValue();
 
                     mHandler.sendMessage(Msg);
