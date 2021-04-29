@@ -101,7 +101,7 @@ dSocketResult Server::smartphoneWriteCallback() {
                                                       reinterpret_cast <const sockaddr*>(&mSmartphoneAddr),
                                                       mSmartphoneAddrLen);
 
-                std::cout << "Written!" << std::endl;
+//                std::cout << "Written!" << std::endl;
 
                 switch (Result) {
                     case dSocketResult::SUCCESS:
@@ -167,7 +167,7 @@ dSocketResult Server::smartphoneProcessCallback() {
 
                     break;
                 case SmartphoneHeader::PING:
-                    std::cout << "Ping" << std::endl;
+//                    std::cout << "Ping" << std::endl;
                     ///---TODO: Add ping handling---///
 
                     break;
@@ -284,6 +284,7 @@ void Server::timerCallback() {
     uint8_t Packet[mPacketSize];
     SmartphoneHeader Tag = SmartphoneHeader::PING;
     std::chrono::duration <double> Dur {};
+    int Counter = 0;
 
     memcpy(Packet, &Tag, 4);
 
@@ -298,9 +299,12 @@ void Server::timerCallback() {
                 mSmartphoneAddrLen  = 0;
             }
 
+            std::cout << Counter << std::endl;
+            Counter++;
+
             fillSmartphoneWriteBuffer(Packet);
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
     }
 }
