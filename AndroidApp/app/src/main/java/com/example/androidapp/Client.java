@@ -196,6 +196,7 @@ public class Client {
     void processFunc() {
         byte[] Packet = new byte[mPacketSize];
         Header Tag;
+        int Counter = 0;
 
         while (!mTerminate.get()) {
             synchronized (mProcessMonitor) {
@@ -230,6 +231,9 @@ public class Client {
                     case JOYSTICK_COORDS:
                         break;
                     case PING:
+                        System.out.println(Counter);
+                        Counter++;
+
                         if (!mConnected.get()) {
                             mConnected.set(true);
 
@@ -412,7 +416,7 @@ public class Client {
             }
 
             try {
-                Thread.sleep(500);
+                Thread.sleep(250);
             } catch (InterruptedException tExcept) {
                 mShutDown.set(true);
                 signalAll();

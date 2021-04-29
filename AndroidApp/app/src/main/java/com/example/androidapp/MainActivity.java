@@ -145,15 +145,6 @@ public class MainActivity extends AppCompatActivity {
 }
 
 
-
-
-
-//There is a bug that causes disconnection
-///---TODO: Fix that shit---///
-
-
-
-
 class NetworkThread extends HandlerThread {
     public NetworkThread(MainActivity.HandlerUI tHandler) {
         super("Network");
