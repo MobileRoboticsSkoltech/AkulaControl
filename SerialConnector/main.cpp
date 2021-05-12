@@ -1,14 +1,20 @@
 #include "SerialConnector.h"
 //-----------------------------//
 int main() {
-    SerialConnector Connector("/dev/ttyACM2", B115200, 1000, 4);
+    SerialConnector Connector("/dev/ttyACM1", B115200, 1000, 4);
 
     uint8_t Buff[4];
+    uint32_t Bytes;
 
-    for (int i = 0; i < 20; i++) {
+    uint8_t Test[32];
+
+    while (true) {
+        Connector.writeSerial(Test);
         Connector.readSerial(Buff);
 
-        std::cout << reinterpret_cast <char*>(Buff) << std::endl;
+        memcpy(&Bytes, Buff, 4);
+
+        std::cout << Bytes << std::endl;
     }
 
     return 0;

@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "usb_device.h"
+#include "usbd_cdc_if.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -50,7 +51,7 @@
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-
+uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -91,12 +92,26 @@ int main(void)
 
   /* USER CODE END 2 */
 
+  uint8_t Buffer[32];
+
+  uint8_t WriteBuffer[4];
+
+  WriteBuffer[0] = 'T';
+  WriteBuffer[1] = 'e';
+  WriteBuffer[2] = 's';
+  WriteBuffer[3] = 't';
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  while (1)
-  {
+  while (1) {
     /* USER CODE END WHILE */
+	  uint32_t Read = readSerial(Buffer, 32);
+	  memcpy(WriteBuffer, &Read, 4);
 
+
+	  CDC_Transmit_FS(WriteBuffer, 4);
+
+	  HAL_Delay(1000);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -172,7 +187,26 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength) {
+	uint32_t ReceivedBytes = 0;
 
+	if ((tBuffer == NULL) || (tLength == 0)) {
+		return 0;
+	}
+
+	while (tLength--) {
+		if (gReceiveBuffer.mHead == gReceiveBuffer.mTail) {
+			return ReceivedBytes;
+		}
+
+		ReceivedBytes++;
+
+		*tBuffer++ = gReceiveBuffer.mBuffer[gReceiveBuffer.mTail];
+		gReceiveBuffer.mTail = RING_BUFFER_INCR(gReceiveBuffer.mTail);
+	}
+
+	return ReceivedBytes;
+}
 /* USER CODE END 4 */
 
 /**
