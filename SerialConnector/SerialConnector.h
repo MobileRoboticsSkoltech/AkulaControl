@@ -19,8 +19,8 @@ public:
 
     //----------//
 
-    void readSerial(uint8_t* tBuffer) const;
-    void writeSerial(const uint8_t* tBuffer) const;
+    ssize_t readSerial(uint8_t* tBuffer) const;
+    ssize_t writeSerial(const uint8_t* tBuffer) const;
 private:
     int         mSerialPort     = 0;
     termios     mTTY            = {};

@@ -61,9 +61,9 @@ SerialConnector::~SerialConnector() {
     close(mSerialPort);
 }
 //-----------------------------//
-void SerialConnector::readSerial(uint8_t* tBuffer) const {
-    read(mSerialPort, tBuffer, mPacketSize);
+ssize_t SerialConnector::readSerial(uint8_t* tBuffer) const {
+    return read(mSerialPort, tBuffer, mPacketSize);
 }
-void SerialConnector::writeSerial(const uint8_t* tBuffer) const {
-    write(mSerialPort, tBuffer, mPacketSize);
+ssize_t SerialConnector::writeSerial(const uint8_t* tBuffer) const {
+    return write(mSerialPort, tBuffer, mPacketSize);
 }
