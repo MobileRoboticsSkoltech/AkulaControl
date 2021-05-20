@@ -51,11 +51,11 @@
 /* USER CODE BEGIN EXPORTED_DEFINES */
 /* Define size for the receive and transmit buffer over CDC */
 /* It's up to user to redefine and/or remove those define */
-#define APP_RX_DATA_SIZE  		2048
-#define APP_TX_DATA_SIZE  		2048
+#define APP_RX_DATA_SIZE        2048
+#define APP_TX_DATA_SIZE        2048
 
 #define RING_BUFFER_SIZE 		128
-#define RING_BUFFER_INCR(x)		((x + 1) & (RING_BUFFER_SIZE - 1))
+#define RING_BUFFER_INCR(x)		(((x) + 1) & (RING_BUFFER_SIZE - 1))
 /* USER CODE END EXPORTED_DEFINES */
 
 /**
@@ -69,10 +69,10 @@
 
 /* USER CODE BEGIN EXPORTED_TYPES */
 typedef struct RingBuffer {
-	uint32_t 	mHead;
-	uint32_t 	mTail;
+    uint32_t 	mHead;
+    uint32_t 	mTail;
 
-	uint8_t 	mBuffer[RING_BUFFER_SIZE];
+    uint8_t 	mBuffer[RING_BUFFER_SIZE];
 } RingBuffer;
 /* USER CODE END EXPORTED_TYPES */
 

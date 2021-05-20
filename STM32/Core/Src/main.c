@@ -9,18 +9,18 @@
   * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software component is licensed by ST under Ultimate Liberty license
+  * SLA0044, the "License"; You may not use this file except in compliance with
+  * the License. You may obtain a copy of the License at:
+  *                             www.st.com/SLA0044
   *
   ******************************************************************************
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
+#include <usbd_cdc_if.h>
 #include "main.h"
 #include "usb_device.h"
-#include "usbd_cdc_if.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -63,84 +63,107 @@ uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength);
   * @brief  The application entry point.
   * @retval int
   */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
+int main(void) {
+    /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
+    /* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+    /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+    HAL_Init();
 
-  /* USER CODE BEGIN Init */
+    /* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+    /* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+    /* Configure the system clock */
+    SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+    /* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+    /* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_USB_DEVICE_Init();
-  /* USER CODE BEGIN 2 */
+    /* Initialize all configured peripherals */
+    MX_GPIO_Init();
+    MX_USB_DEVICE_Init();
+    /* USER CODE BEGIN 2 */
 
-  /* USER CODE END 2 */
+    uint8_t ReadBuffer[PACKET_SIZE];
+    uint8_t WriteBuffer[PACKET_SIZE];
 
-  uint8_t ReadBuffer[PACKET_SIZE];
-  uint8_t WriteBuffer[PACKET_SIZE];
+    uint32_t CurrentTime;
+    uint32_t TimeoutMs = 2000;
 
-  uint32_t TotalSpeed = 0;
-  uint32_t DeltaSpeed = 0;
+    int Connected = 0;
+    int Running = 1;
 
-  int Connected = 0;
-  uint32_t Tag = CONN_REQUEST_TAG;
+    uint32_t Tag = CONN_REQUEST_TAG;
+
+    /* USER CODE END 2 */
+
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
+    while (1) {
+        /* USER CODE END WHILE */
+        if (!Connected) {
+            CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+            HAL_Delay(1000);
+
+            if (readSerial(ReadBuffer, PACKET_SIZE)) {
+                memcpy(&Tag, ReadBuffer, 4);
+
+                if (Tag == PING_TAG) {
+                    CurrentTime = HAL_GetTick();
+
+                    Connected = 1;
+                    memcpy(WriteBuffer, &Tag, 4);
+                    CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                }
+            }
+        } else {
+            if (readSerial(ReadBuffer, PACKET_SIZE)) {
+                memcpy(&Tag, ReadBuffer, 4);
+
+//			  if (HAL_GetTick() - CurrentTime > TimeoutMs) {
+//				  Connected = 0;
+//				  continue;
+//			  }
+
+                switch (Tag) {
+                    case PING_TAG:
+                        CurrentTime = HAL_GetTick();
+
+                        memcpy(WriteBuffer, &Tag, 4);
+                        memcpy(WriteBuffer + 4, &CurrentTime, 4);
+
+                        CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+
+                        break;
+                    case SPEED_TAG:
+//			  		  memcpy(&DeltaSpeed, ReadBuffer, 4);
+//
+//			  		  if (DeltaSpeed < 10) {
+//			  			  TotalSpeed += DeltaSpeed;
+//			  		  }
+//
+//			  		  memcpy(WriteBuffer, &TotalSpeed, 4);
+//			  		  CDC_Transmit_FS(WriteBuffer, 4);
+
+                        break;
+                    default:
+                        break;
+                }
+
+                Tag = 0;
 
 
-  memcpy(WriteBuffer, &Tag, 4);
-
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1) {
-    /* USER CODE END WHILE */
-	  while (!Connected) {
-		  CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-		  HAL_Delay(1000);
-
-		  if (readSerial(ReadBuffer, PACKET_SIZE)) {
-			  memcpy(&Tag, ReadBuffer, 4);
-
-			  if (Tag == PING_TAG) {
-				  Connected = 1;
-				  break;
-			  }
-		  }
-	  }
-
-
-
-
-	  if (readSerial(ReadBuffer, 4)) {
-		  memcpy(&DeltaSpeed, ReadBuffer, 4);
-
-		  if (DeltaSpeed < 10) {
-			  TotalSpeed += DeltaSpeed;
-		  }
-
-		  memcpy(WriteBuffer, &TotalSpeed, 4);
-		  CDC_Transmit_FS(WriteBuffer, 4);
-	  }
-
-	  HAL_Delay(1000);
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+                HAL_Delay(1000);
+            }
+        }
+        /* USER CODE BEGIN 3 */
+    }
+    /* USER CODE END 3 */
 }
 
 /**
@@ -196,21 +219,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
-
-  /*Configure GPIO pins : PE2 PE3 PE4 PE5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB9 */
   GPIO_InitStruct.Pin = GPIO_PIN_9;
@@ -223,24 +237,24 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength) {
-	uint32_t ReceivedBytes = 0;
+    uint32_t ReceivedBytes = 0;
 
-	if ((tBuffer == NULL) || (tLength == 0)) {
-		return 0;
-	}
+    if ((tBuffer == NULL) || (tLength == 0)) {
+        return 0;
+    }
 
-	while (tLength--) {
-		if (gReceiveBuffer.mHead == gReceiveBuffer.mTail) {
-			return ReceivedBytes;
-		}
+    while (tLength--) {
+        if (gReceiveBuffer.mHead == gReceiveBuffer.mTail) {
+            return ReceivedBytes;
+        }
 
-		ReceivedBytes++;
+        ReceivedBytes++;
 
-		*tBuffer++ = gReceiveBuffer.mBuffer[gReceiveBuffer.mTail];
-		gReceiveBuffer.mTail = RING_BUFFER_INCR(gReceiveBuffer.mTail);
-	}
+        *tBuffer++ = gReceiveBuffer.mBuffer[gReceiveBuffer.mTail];
+        gReceiveBuffer.mTail = RING_BUFFER_INCR(gReceiveBuffer.mTail);
+    }
 
-	return ReceivedBytes;
+    return ReceivedBytes;
 }
 /* USER CODE END 4 */
 

@@ -111,9 +111,9 @@ extern USBD_HandleTypeDef hUsbDeviceFS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
 RingBuffer gReceiveBuffer = {
-		  .mHead = 0,
-		  .mTail = 0
-  };
+        .mHead = 0,
+        .mTail = 0
+};
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**
@@ -265,37 +265,38 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-	uint32_t Length = *Len;
+    uint32_t Length = *Len;
 
-	if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) {
-	   return USBD_FAIL;
-	}
+    if (hUsbDeviceFS.dev_state != USBD_STATE_CONFIGURED) {
+        return USBD_FAIL;
+    }
 
-	if (((Buf == NULL) || (Len == NULL)) || (*Len <= 0)) {
-	   return USBD_FAIL;
-	}
+    if (((Buf == NULL) || (Len == NULL)) || (*Len <= 0)) {
+        return USBD_FAIL;
+    }
 
-	uint8_t result = USBD_OK;
+    uint8_t result = USBD_OK;
 
-	do {
-		result = USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
-	} while(result != USBD_OK);
+    do {
+        result = USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+    } while(result != USBD_OK);
 
-	do {
-		result = USBD_CDC_ReceivePacket(&hUsbDeviceFS);
-	} while(result != USBD_OK);
+    do {
+        result = USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+    } while(result != USBD_OK);
 
-	// add data to FIFO
-	while (Length--) {
-		if (RING_BUFFER_INCR(gReceiveBuffer.mHead) == gReceiveBuffer.mTail) {
-			return USBD_FAIL;  // overrun
-		} else {
-			gReceiveBuffer.mBuffer[gReceiveBuffer.mHead]	= *Buf++;
-			gReceiveBuffer.mHead							= RING_BUFFER_INCR(gReceiveBuffer.mHead);
-	    }
-	}
+    // add data to FIFO
+    while (Length--) {
+        if (RING_BUFFER_INCR(gReceiveBuffer.mHead) == gReceiveBuffer.mTail) {
+            return USBD_FAIL;  // overrun
+        } else {
+            gReceiveBuffer.mBuffer[gReceiveBuffer.mHead]	= *Buf++;
+            gReceiveBuffer.mHead							= RING_BUFFER_INCR(gReceiveBuffer.mHead);
+        }
+    }
 
-	return (USBD_OK);
+    return (USBD_OK);
+  return (USBD_OK);
   /* USER CODE END 6 */
 }
 
