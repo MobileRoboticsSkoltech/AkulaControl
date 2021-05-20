@@ -42,7 +42,7 @@ SerialConnector::SerialConnector(const std::string& tSerialPath, uint16_t tSpeed
     mTTY.c_oflag &= ~OPOST;                                              // Prevent special interpretation of output bytes (e.g. newline chars)
     mTTY.c_oflag &= ~ONLCR;                                              // Prevent conversion of newline to carriage return/line feed
 
-    mTTY.c_cc[VTIME] = tTimeout / 10;                                    // Wait for up to tTimeout / 10 deciseconds, returning as soon as any data is received.
+    mTTY.c_cc[VTIME] = tTimeout / 100;                                   // Wait for up to tTimeout / 100 deciseconds, returning as soon as any data is received.
     mTTY.c_cc[VMIN] = 0;
 
     cfsetispeed(&mTTY, tSpeed);

@@ -64,6 +64,8 @@ void Error_Handler(void);
 #define CONN_REQUEST_TAG 	0x0000AAAA
 #define SPEED_TAG 			0x0000AAAB
 #define PING_TAG			0x0000AAAC
+#define UNDEFINED           0XFFFFFFFE
+#define SHUTDOWN            0XFFFFFFFF
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

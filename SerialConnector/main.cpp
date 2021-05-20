@@ -7,10 +7,12 @@
 #define CONN_REQUEST_TAG 	0x0000AAAA
 #define SPEED_TAG 			0x0000AAAB
 #define PING_TAG			0x0000AAAC
+#define UNDEFINED           0XFFFFFFFE
+#define SHUTDOWN            0XFFFFFFFF
 //-----------------------------//
 
 int main() {
-    SerialConnector Connector("/dev/ttyACM1", B115200, 100, PACKET_SIZE);
+    SerialConnector Connector("/dev/ttyACM1", B115200, 2000, PACKET_SIZE);
 
     uint32_t PingInterval = 1000;
     std::chrono::system_clock::time_point LastPing;
@@ -21,47 +23,50 @@ int main() {
 
     uint8_t ReadBuffer[PACKET_SIZE];
     uint8_t WriteBuffer[PACKET_SIZE];
-    uint32_t TotalSpeed = 0;
-    uint32_t DeltaSpeed = 1;
 
     uint32_t Time;
 
-    uint32_t Tag;
-
-    memcpy(WriteBuffer, &DeltaSpeed, PACKET_SIZE);
+    uint32_t WriteTag           = UNDEFINED;
+    uint32_t ReadTag            = UNDEFINED;
 
     while (Running) {
         if (!Connected) {
             if (Connector.readSerial(ReadBuffer) > 0) {
-                memcpy(&Tag, ReadBuffer, 4);
+                memcpy(&ReadTag, ReadBuffer, 4);
 
-                if (Tag == CONN_REQUEST_TAG) {
+                if (ReadTag == CONN_REQUEST_TAG) {
                     std::cout << "Request" << std::endl;
-                    Tag = PING_TAG;
-                    memcpy(WriteBuffer, &Tag, 4);
+                    WriteTag = PING_TAG;
+                    memcpy(WriteBuffer, &WriteTag, 4);
                     Connector.writeSerial(WriteBuffer);
                     Connected = true;
+
+                    WriteTag = UNDEFINED;
                 }
+
+                ReadTag = UNDEFINED;
             } else {
                 std::cerr << "Timeout" << std::endl;
             }
         } else {
             Duration = std::chrono::system_clock::now() - LastPing;
 
-            if (Duration.count() > PingInterval) {
-                Tag = PING_TAG;
-                memcpy(WriteBuffer, &Tag, 4);
+            if (Duration.count() * 1000 > PingInterval) {
+                WriteTag = PING_TAG;
+                memcpy(WriteBuffer, &WriteTag, 4);
                 Connector.writeSerial(WriteBuffer);
 
                 LastPing = std::chrono::system_clock::now();
 
                 std::cout << "Ping" << std::endl;
+
+                WriteTag = UNDEFINED;
             }
 
             if (Connector.readSerial(ReadBuffer) > 0) {
-                memcpy(&Tag, ReadBuffer, 4);
+                memcpy(&ReadTag, ReadBuffer, 4);
 
-                switch (Tag) {
+                switch (ReadTag) {
                     case SPEED_TAG:
                         break;
                     case PING_TAG:
@@ -71,15 +76,14 @@ int main() {
                         std::cout << Time << std::endl;
                         break;
                     default:
-                        std::cerr << "Something wend wrong!" << std::endl;
+                        std::cerr << "Something wend wrong: " << ReadTag << std::endl;
                         Running = false;
                 }
+
+                ReadTag = UNDEFINED;
             } else {
                 std::cerr << "Timeout" << std::endl;
             }
-
-
-
         }
     }
 

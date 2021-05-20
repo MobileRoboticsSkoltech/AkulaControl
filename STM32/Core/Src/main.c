@@ -93,74 +93,76 @@ int main(void) {
     uint8_t WriteBuffer[PACKET_SIZE];
 
     uint32_t CurrentTime;
-    uint32_t TimeoutMs = 2000;
+    uint32_t TimeoutMs          = 2000;
 
-    int Connected = 0;
-    int Running = 1;
+    int Connected               = 0;
+    int Running                 = 1;
 
-    uint32_t Tag = CONN_REQUEST_TAG;
+    uint32_t WriteTag           = UNDEFINED;
+    uint32_t ReadTag            = UNDEFINED;
 
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    while (1) {
-        /* USER CODE END WHILE */
+    while (Running) {
         if (!Connected) {
+            WriteTag = CONN_REQUEST_TAG;
+            memcpy(WriteBuffer, &WriteTag, 4);
             CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
             HAL_Delay(1000);
 
             if (readSerial(ReadBuffer, PACKET_SIZE)) {
-                memcpy(&Tag, ReadBuffer, 4);
+                memcpy(&ReadTag, ReadBuffer, 4);
 
-                if (Tag == PING_TAG) {
-                    CurrentTime = HAL_GetTick();
+                if (ReadTag == PING_TAG) {
+                    WriteTag = PING_TAG;
+                    memcpy(WriteBuffer, &WriteTag, 4);
+                    CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                    WriteTag = UNDEFINED;
 
                     Connected = 1;
-                    memcpy(WriteBuffer, &Tag, 4);
-                    CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
                 }
+
+                ReadTag = UNDEFINED;
             }
         } else {
             if (readSerial(ReadBuffer, PACKET_SIZE)) {
-                memcpy(&Tag, ReadBuffer, 4);
+                memcpy(&ReadTag, ReadBuffer, 4);
 
-//			  if (HAL_GetTick() - CurrentTime > TimeoutMs) {
-//				  Connected = 0;
-//				  continue;
-//			  }
-
-                switch (Tag) {
+                switch (ReadTag) {
                     case PING_TAG:
                         CurrentTime = HAL_GetTick();
+                        WriteTag = PING_TAG;
 
-                        memcpy(WriteBuffer, &Tag, 4);
+                        memcpy(WriteBuffer, &WriteTag, 4);
                         memcpy(WriteBuffer + 4, &CurrentTime, 4);
 
                         CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
 
+                        WriteTag = UNDEFINED;
+
                         break;
                     case SPEED_TAG:
-//			  		  memcpy(&DeltaSpeed, ReadBuffer, 4);
-//
-//			  		  if (DeltaSpeed < 10) {
-//			  			  TotalSpeed += DeltaSpeed;
-//			  		  }
-//
-//			  		  memcpy(WriteBuffer, &TotalSpeed, 4);
-//			  		  CDC_Transmit_FS(WriteBuffer, 4);
-
+                        break;
+                    case SHUTDOWN:
+                        Running = 0;
                         break;
                     default:
                         break;
                 }
 
-                Tag = 0;
-
-
-                HAL_Delay(1000);
+                ReadTag = UNDEFINED;
             }
+
+            if (HAL_GetTick() - CurrentTime > TimeoutMs) {
+                Connected = 0;
+                continue;
+            }
+
+            HAL_Delay(1000);
         }
+        /* USER CODE END WHILE */
         /* USER CODE BEGIN 3 */
     }
     /* USER CODE END 3 */
