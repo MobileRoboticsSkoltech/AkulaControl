@@ -10,7 +10,7 @@
  * @param tTimeout For some unknown reason tty timeout is in deciseconds (10^-2s) but tTimeout will be in millisecond
  */
 SerialConnector::SerialConnector(const std::string& tSerialPath, uint16_t tSpeed, uint32_t tTimeout, size_t tPacketSize) {
-    mSerialPort = open(tSerialPath.c_str(), O_RDWR);
+    mSerialPort = open(tSerialPath.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
 
     if (mSerialPort < 0) {
         std::cerr << "Failed to open the port: " << errno << "(" + std::string(strerror(errno)) + ")" << std::endl;
@@ -52,6 +52,8 @@ SerialConnector::SerialConnector(const std::string& tSerialPath, uint16_t tSpeed
         std::cerr << "Failed to set attributes: " << errno << "(" + std::string(strerror(errno)) + ")" << std::endl;
         throw std::runtime_error("SerialConnector::constructor");
     }
+
+    fcntl(mSerialPort, F_SETFL, FNDELAY);
 
     //----------//
 

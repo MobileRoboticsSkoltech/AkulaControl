@@ -1,4 +1,5 @@
 #include <chrono>
+#include <thread>
 //-----------------------------//
 #include "SerialConnector.h"
 //-----------------------------//
@@ -12,7 +13,7 @@
 //-----------------------------//
 
 int main() {
-    SerialConnector Connector("/dev/ttyACM1", B115200, 2000, PACKET_SIZE);
+    SerialConnector Connector("/dev/ttyACM1", B115200, 1000, PACKET_SIZE);
 
     uint32_t PingInterval = 1000;
     std::chrono::system_clock::time_point LastPing;
@@ -23,8 +24,6 @@ int main() {
 
     uint8_t ReadBuffer[PACKET_SIZE];
     uint8_t WriteBuffer[PACKET_SIZE];
-
-    uint32_t Time;
 
     uint32_t WriteTag           = UNDEFINED;
     uint32_t ReadTag            = UNDEFINED;
@@ -56,9 +55,22 @@ int main() {
                 memcpy(WriteBuffer, &WriteTag, 4);
                 Connector.writeSerial(WriteBuffer);
 
-                LastPing = std::chrono::system_clock::now();
+//                LastPing = std::chrono::system_clock::now();
 
                 std::cout << "Ping" << std::endl;
+
+//                WriteTag = UNDEFINED;
+
+                //----------//
+
+                WriteTag = SPEED_TAG;
+                uint32_t DeltaSpeed = 2;
+
+                memcpy(WriteBuffer, &WriteTag, 4);
+                memcpy(WriteBuffer + 4, &DeltaSpeed, 4);
+                Connector.writeSerial(WriteBuffer);
+
+                LastPing = std::chrono::system_clock::now();
 
                 WriteTag = UNDEFINED;
             }
@@ -68,12 +80,14 @@ int main() {
 
                 switch (ReadTag) {
                     case SPEED_TAG:
+                        uint32_t Speed;
+                        memcpy(&Speed, ReadBuffer + 4, 4);
+
+                        std::cout << Speed << std::endl;
+
                         break;
                     case PING_TAG:
-                        memcpy(&Time, ReadBuffer + 4, 4);
-
                         std::cout << "Response!" << std::endl;
-                        std::cout << Time << std::endl;
                         break;
                     default:
                         std::cerr << "Something wend wrong: " << ReadTag << std::endl;
@@ -81,9 +95,9 @@ int main() {
                 }
 
                 ReadTag = UNDEFINED;
-            } else {
-                std::cerr << "Timeout" << std::endl;
             }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 

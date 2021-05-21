@@ -93,13 +93,18 @@ int main(void) {
     uint8_t WriteBuffer[PACKET_SIZE];
 
     uint32_t CurrentTime;
-    uint32_t TimeoutMs          = 2000;
+    uint32_t TimeoutMs          = 5000;
 
     int Connected               = 0;
     int Running                 = 1;
 
     uint32_t WriteTag           = UNDEFINED;
     uint32_t ReadTag            = UNDEFINED;
+
+    uint32_t Speed              = 0;
+    uint32_t DeltaSpeed         = 0;
+
+    uint8_t SendResult;
 
     /* USER CODE END 2 */
 
@@ -133,17 +138,32 @@ int main(void) {
                 switch (ReadTag) {
                     case PING_TAG:
                         CurrentTime = HAL_GetTick();
+
                         WriteTag = PING_TAG;
 
                         memcpy(WriteBuffer, &WriteTag, 4);
-                        memcpy(WriteBuffer + 4, &CurrentTime, 4);
 
-                        CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                        do {
+                            SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                        } while (SendResult == USBD_BUSY);
 
                         WriteTag = UNDEFINED;
 
                         break;
                     case SPEED_TAG:
+                        memcpy(&DeltaSpeed, ReadBuffer + 4, 4);
+                        Speed += DeltaSpeed;
+                        WriteTag = SPEED_TAG;
+
+                        memcpy(WriteBuffer, &WriteTag, 4);
+                        memcpy(WriteBuffer + 4, &Speed, 4);
+
+                        do {
+                            SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                        } while (SendResult == USBD_BUSY);
+
+                        WriteTag = UNDEFINED;
+
                         break;
                     case SHUTDOWN:
                         Running = 0;
@@ -160,7 +180,7 @@ int main(void) {
                 continue;
             }
 
-            HAL_Delay(1000);
+//            HAL_Delay(100);
         }
         /* USER CODE END WHILE */
         /* USER CODE BEGIN 3 */
