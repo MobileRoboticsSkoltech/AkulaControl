@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 //-----------------------------//
 class SerialConnector {
 public:
@@ -26,6 +27,11 @@ private:
     termios     mTTY            = {};
 
     size_t      mPacketSize     = 0;
+    uint32_t    mTimeoutMs      = 0;
+
+    //----------//
+
+    bool checkNewData() const;
 };
 //-----------------------------//
 #endif

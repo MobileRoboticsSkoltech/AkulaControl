@@ -115,7 +115,7 @@ int main(void) {
             WriteTag = CONN_REQUEST_TAG;
             memcpy(WriteBuffer, &WriteTag, 4);
             CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-            HAL_Delay(1000);
+            HAL_Delay(2000);
 
             if (readSerial(ReadBuffer, PACKET_SIZE)) {
                 memcpy(&ReadTag, ReadBuffer, 4);

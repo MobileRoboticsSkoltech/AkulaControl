@@ -13,11 +13,15 @@
 //-----------------------------//
 
 int main() {
-    SerialConnector Connector("/dev/ttyACM1", B115200, 1000, PACKET_SIZE);
+    SerialConnector Connector("/dev/ttyACM5", B115200, 10, PACKET_SIZE);
 
-    uint32_t PingInterval = 1000;
+    uint32_t PingInterval = 20;
     std::chrono::system_clock::time_point LastPing;
     std::chrono::duration <double> Duration {};
+
+    std::chrono::system_clock::time_point Start;
+    std::chrono::system_clock::time_point Stop;
+    std::chrono::duration <double> WaitDuration {};
 
     bool Connected = false;
     bool Running = true;
@@ -55,11 +59,11 @@ int main() {
                 memcpy(WriteBuffer, &WriteTag, 4);
                 Connector.writeSerial(WriteBuffer);
 
-//                LastPing = std::chrono::system_clock::now();
+                LastPing = std::chrono::system_clock::now();
 
                 std::cout << "Ping" << std::endl;
 
-//                WriteTag = UNDEFINED;
+                WriteTag = UNDEFINED;
 
                 //----------//
 
@@ -75,6 +79,8 @@ int main() {
                 WriteTag = UNDEFINED;
             }
 
+            Start = std::chrono::system_clock::now();
+
             if (Connector.readSerial(ReadBuffer) > 0) {
                 memcpy(&ReadTag, ReadBuffer, 4);
 
@@ -83,11 +89,14 @@ int main() {
                         uint32_t Speed;
                         memcpy(&Speed, ReadBuffer + 4, 4);
 
-                        std::cout << Speed << std::endl;
+                        std::cout << "Speed" << std::endl;
 
                         break;
                     case PING_TAG:
                         std::cout << "Response!" << std::endl;
+                        break;
+                    case CONN_REQUEST_TAG:
+                        std::cout << "Request: skip" << std::endl;
                         break;
                     default:
                         std::cerr << "Something wend wrong: " << ReadTag << std::endl;
@@ -97,7 +106,13 @@ int main() {
                 ReadTag = UNDEFINED;
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            Stop = std::chrono::system_clock::now();
+
+            WaitDuration = Stop - Start;
+
+//            std::cout << WaitDuration.count() << std::endl;
+
+//            std::this_thread::sleep_for(std::chrono::milliseconds(20));
         }
     }
 
