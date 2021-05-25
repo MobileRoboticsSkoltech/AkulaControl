@@ -1,9 +1,10 @@
 //
-// Created by mrob on 30.04.2021.
+// Created by devilox on 30.04.2021.
 //
 //-----------------------------//
 #include "SerialConnector.h"
 //-----------------------------//
+///---TODO: fix description---///
 /**
  * @param tSerialPath
  * @param tSpeed

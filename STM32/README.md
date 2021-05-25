@@ -17,6 +17,20 @@
 
 STLinkv2 (mini-USB) is (usually) ttyACM0, Virtual port (micro-USB) is (usually) ttyACM1
 
+### Setting up udev rule (optional):
+
+In order to have constant name for serial port (instead of ttyACM[0-9]) you need to create custom udev rule:
+
+1. Connect all the cables to your stm32 board with configured virtual port
+2. Find all the serial port names (usually ttyACM0 and ttyACM1) and enter commands in the terminal: "**udevadm info -a /dev/ttyACM0**"" and "**udevadm info -a /dev/ttyACM1**""
+3. Find the "**vendorId**" (in our case it is **0483**) and something you can use to differentiate between ports (in our case it will be "**productId**": "**374b**" for StLink and "**5740**" for virtual port); this also can be done using command "**lsusb**"
+4. Create custom udev rule using "**sudo nano /etc/udev/rules.d/49-custom.rules**"
+5. Add line (enter your own idProduct or other parameters and tty name you want to use for vitual port)
+```
+KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", SYMLINK="ttyStmVP"
+```
+6. Unplug and plug again virtual port micro usb
+
 # Setting Clion for stm32 development (optional)
 
 ### Preparing the environment:
