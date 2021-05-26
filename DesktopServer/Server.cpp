@@ -16,11 +16,17 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) :
 
     //----------//
 
+    mMonitorSTM                 = new SerialMonitor("/dev/ttyStmVP", 32);
+
+    //----------//
+
+    ///---TODO: change void to smth and deal with it---///
     mSmartphoneReadThread       = std::async(std::launch::async, &Server::smartphoneReadCallback, this);
     mSmartphoneWriteThread      = std::async(std::launch::async, &Server::smartphoneWriteCallback, this);
     mSmartphoneProcessThread    = std::async(std::launch::async, &Server::smartphoneProcessCallback, this);
 
     mTimerThread                = std::async(std::launch::async, &Server::timerCallback, this);
+    mSerialThread               = std::async(std::launch::async, &Server::serialCallback, this);
 }
 Server::~Server() {
     delete[](mSmartphoneReadBuffer);
@@ -165,6 +171,8 @@ dSocketResult Server::smartphoneProcessCallback() {
 
                     std::cout << PosX << " : " << PosY << std::endl;
 
+                    mMonitorSTM -> sendCoords();
+
                     break;
                 case SmartphoneHeader::PING:
 //                    std::cout << "Ping" << std::endl;
@@ -306,5 +314,11 @@ void Server::timerCallback() {
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    }
+}
+void Server::serialCallback() {
+    ///---TODO: add proper termination---///
+    if (mMonitorSTM && !mTerminate.load()) {
+        mMonitorSTM -> startSerialLoop();
     }
 }

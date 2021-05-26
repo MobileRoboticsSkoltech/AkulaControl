@@ -12,6 +12,7 @@
 #include <queue>
 //-----------------------------//
 #include "dSocket/dSocket.h"
+#include "SerialMonitor.h"
 //-----------------------------//
 enum class SmartphoneHeader {
     REQUEST_CONN,
@@ -43,6 +44,7 @@ public:
     //----------//
 
     void timerCallback();
+    void serialCallback();
 private:
     std::atomic_bool                            mTerminate                              = false;
     std::atomic_bool                            mConnected                              = false;
@@ -101,7 +103,12 @@ private:
 
     //----------//
 
+    SerialMonitor*                              mMonitorSTM                             = nullptr;
+
+    //----------//
+
     std::future <void>                          mTimerThread;
+    std::future <void>                          mSerialThread;
 };
 //-----------------------------//
 #endif
