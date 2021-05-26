@@ -18,6 +18,8 @@ include_directories(lib)
 add_executable(DesktopServer
         main.cpp
         Server.cpp
+        SerialConnector.cpp
+        SerialMonitor.cpp
         lib/dSocket/dSocket.cpp)
 target_link_libraries(DesktopServer
         Threads::Threads)
