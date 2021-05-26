@@ -60,6 +60,9 @@ void SerialMonitor::startSerialLoop() {
                     case PacketType::REQUEST_CONN:
                         std::cout << "Request: skip" << std::endl;
                         break;
+                    case PacketType::JOYSTICK_COORDS:
+                        std::cout << "Coord response!" << std::endl;
+                        break;
                     default:
                         std::cerr << "Something wend wrong: " << static_cast <uint32_t>(ReadTag) << std::endl;
                         mRunning.store(false);

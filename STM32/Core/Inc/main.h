@@ -60,12 +60,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 /* USER CODE BEGIN Private defines */
 #define PACKET_SIZE			32
-
-#define CONN_REQUEST_TAG 	0x0000AAAA
-#define SPEED_TAG 			0x0000AAAB
-#define PING_TAG			0x0000AAAC
-#define UNDEFINED           0XFFFFFFFE
-#define SHUTDOWN            0XFFFFFFFF
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

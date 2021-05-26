@@ -29,7 +29,14 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+enum PacketType {
+    REQUEST_CONN        = 0x0000AAAA,
+    JOYSTICK_COORDS     = 0x0000AAAB,
+    PING                = 0x0000AAAC,
+    ENCODER             = 0x0000AAAD,
+    INVALID             = 0x0000FFFE,
+    SHUTDOWN            = 0X0000FFFF
+};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -98,11 +105,8 @@ int main(void) {
     int Connected               = 0;
     int Running                 = 1;
 
-    uint32_t WriteTag           = UNDEFINED;
-    uint32_t ReadTag            = UNDEFINED;
-
-    uint32_t Speed              = 0;
-    uint32_t DeltaSpeed         = 0;
+    uint32_t WriteTag           = INVALID;
+    uint32_t ReadTag            = INVALID;
 
     uint8_t SendResult;
 
@@ -112,7 +116,7 @@ int main(void) {
     /* USER CODE BEGIN WHILE */
     while (Running) {
         if (!Connected) {
-            WriteTag = CONN_REQUEST_TAG;
+            WriteTag = REQUEST_CONN;
             memcpy(WriteBuffer, &WriteTag, 4);
             CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
             HAL_Delay(2000);
@@ -120,26 +124,26 @@ int main(void) {
             if (readSerial(ReadBuffer, PACKET_SIZE)) {
                 memcpy(&ReadTag, ReadBuffer, 4);
 
-                if (ReadTag == PING_TAG) {
-                    WriteTag = PING_TAG;
+                if (ReadTag == PING) {
+                    WriteTag = PING;
                     memcpy(WriteBuffer, &WriteTag, 4);
                     CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-                    WriteTag = UNDEFINED;
+                    WriteTag = INVALID;
 
                     Connected = 1;
                 }
 
-                ReadTag = UNDEFINED;
+                ReadTag = INVALID;
             }
         } else {
             if (readSerial(ReadBuffer, PACKET_SIZE)) {
                 memcpy(&ReadTag, ReadBuffer, 4);
 
                 switch (ReadTag) {
-                    case PING_TAG:
+                    case PING:
                         CurrentTime = HAL_GetTick();
 
-                        WriteTag = PING_TAG;
+                        WriteTag = PING;
 
                         memcpy(WriteBuffer, &WriteTag, 4);
 
@@ -147,22 +151,18 @@ int main(void) {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
                         } while (SendResult == USBD_BUSY);
 
-                        WriteTag = UNDEFINED;
+                        WriteTag = INVALID;
 
                         break;
-                    case SPEED_TAG:
-                        memcpy(&DeltaSpeed, ReadBuffer + 4, 4);
-                        Speed += DeltaSpeed;
-                        WriteTag = SPEED_TAG;
-
+                    case JOYSTICK_COORDS:
+                        WriteTag = JOYSTICK_COORDS;
                         memcpy(WriteBuffer, &WriteTag, 4);
-                        memcpy(WriteBuffer + 4, &Speed, 4);
 
                         do {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
                         } while (SendResult == USBD_BUSY);
 
-                        WriteTag = UNDEFINED;
+                        WriteTag = INVALID;
 
                         break;
                     case SHUTDOWN:
@@ -172,7 +172,7 @@ int main(void) {
                         break;
                 }
 
-                ReadTag = UNDEFINED;
+                ReadTag = INVALID;
             }
 
             if (HAL_GetTick() - CurrentTime > TimeoutMs) {
