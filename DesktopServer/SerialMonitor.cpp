@@ -18,6 +18,12 @@ SerialMonitor::~SerialMonitor() {
     delete[](mWriteBuffer);
 }
 //-----------------------------//
+///---TODO: add timeout to re-enable connection procedure and send timeout state to the smartphone---///
+/**
+ * @description
+ * The function is the main loop for serial communication, there connection to the serial port is established and
+ * packets from the port are processed
+ */
 void SerialMonitor::startSerialLoop() {
     auto ReadTag = PacketType::INVALID;
     auto WriteTag = PacketType::INVALID;
@@ -83,6 +89,12 @@ void SerialMonitor::sendCoords() {
     }
 }
 //-----------------------------//
+///---TODO: move 200ms to a variable---///
+/**
+ * @decription
+ * Timer function is executed in a separate thread during server's uptime. The thread wakes up periodically to
+ * checks if it is necessary to send ping to the serial port.
+ */
 void SerialMonitor::timerCallback() {
     while (mRunning.load()) {
         mPingDuration = std::chrono::system_clock::now() - mLastPing;
