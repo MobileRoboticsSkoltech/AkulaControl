@@ -29,6 +29,8 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) :
     mSerialThread               = std::async(std::launch::async, &Server::serialCallback, this);
 }
 Server::~Server() {
+    delete(mMonitorSTM);
+
     delete[](mSmartphoneReadBuffer);
     delete[](mSmartphoneWriteBuffer);
 

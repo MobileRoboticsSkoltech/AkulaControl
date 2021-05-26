@@ -13,6 +13,11 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 //-----------------------------//
+///---TODO: add status enum to deal with network errors without crashing the program---///
+/**
+ * @description
+ * Class opens a serial port and provides functions for reading and writing data in packets
+ */
 class SerialConnector {
 public:
     SerialConnector(const std::string& tSerialPath, uint16_t tSpeed, uint32_t tTimeout, size_t tPacketSize);
@@ -31,7 +36,7 @@ private:
 
     //----------//
 
-    bool checkNewData() const;
+    [[nodiscard]] bool checkNewData() const;
 };
 //-----------------------------//
 #endif
