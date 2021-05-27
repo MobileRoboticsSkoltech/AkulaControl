@@ -7,6 +7,7 @@
 SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize) {
     ///---TODO: fix timeout---///
     mConnector      = new SerialConnector(tSerialPath, B115200, 1000, tPacketSize);
+    mPacketSize     = tPacketSize;
 
     mReadBuffer     = new uint8_t[tPacketSize];
     mWriteBuffer    = new uint8_t[tPacketSize];
@@ -80,6 +81,10 @@ void SerialMonitor::startSerialLoop() {
     }
 }
 //-----------------------------//
+/**
+ * @description
+ * Temporary function (maybe idk)
+ */
 void SerialMonitor::sendCoords() {
     auto Tag = static_cast <uint32_t>(PacketType::JOYSTICK_COORDS);
     memcpy(mWriteBuffer, &Tag, 4);
@@ -91,9 +96,9 @@ void SerialMonitor::sendCoords() {
 //-----------------------------//
 ///---TODO: move 200ms to a variable---///
 /**
- * @decription
+ * @description
  * Timer function is executed in a separate thread during server's uptime. The thread wakes up periodically to
- * checks if it is necessary to send ping to the serial port.
+ * checks if it is necessary to send ping to the smartphone.
  */
 void SerialMonitor::timerCallback() {
     while (mRunning.load()) {

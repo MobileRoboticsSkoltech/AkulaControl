@@ -4,6 +4,14 @@
 //-----------------------------//
 #include "Server.h"
 //-----------------------------//
+/**
+ * @description
+ * Constructor initializes a socket for communication with android smartphone and serial monitor,
+ * starts read, write, process, timer and serial main loop thread
+ * @param tPort Port used for communicating with a smartphone
+ * @param tPacketSize Number of bytes in the packets for smartphone
+ * @param tConnTimeout Time in milliseconds without ping from smartphone before disconnection
+ */
 Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) :
                 mPort(tPort), mPacketSize(tPacketSize), mTimeoutMs(tConnTimeout) {
     mSocketUDP                  = new dSocket(true);
@@ -37,6 +45,14 @@ Server::~Server() {
     delete(mSocketUDP);
 }
 //-----------------------------//
+/**
+ * @description
+ * Function is used for obtaining data from smartphone socked and called in a separate thread. Condition variable is
+ * not used as long as socket operates in the blocking state, in case of disconnection read function must return 0
+ * and the loop continues. Decryption can also be added to this function before moving data buffer to the processing
+ * stage
+ * @return Returns dSocket state for proper termination in case of connection failure
+ */
 dSocketResult Server::smartphoneReadCallback() {
     uint8_t Packet[mPacketSize];
     std::unique_lock <std::mutex> Lock(mSmartphoneReadMutex);
@@ -85,6 +101,12 @@ dSocketResult Server::smartphoneReadCallback() {
 
     return dSocketResult::SUCCESS;
 }
+/**
+ * @description
+ * Function is used for sending data to a smartphone. Most of the time in sleeps on the conditional variable until
+ * awaken by any thread. Encryption can also be done in this function
+ * @return Returns dSocket state for proper termination in case of connection failure
+ */
 dSocketResult Server::smartphoneWriteCallback() {
     uint8_t Packet[mPacketSize];
     std::unique_lock <std::mutex> Lock(mSmartphoneWriteMutex);
@@ -131,6 +153,12 @@ dSocketResult Server::smartphoneWriteCallback() {
 
     return dSocketResult::SUCCESS;
 }
+/**
+ * @description
+ * Function is used for parsing data from a packet and performing actions according to a parsed tag. Sleeps until
+ * awakened by any thread
+ * @return Returns dSocket state for proper termination in case of connection failure
+ */
 dSocketResult Server::smartphoneProcessCallback() {
     uint8_t Packet[mPacketSize];
     std::unique_lock <std::mutex> Lock(mSmartphoneProcessMutex);
@@ -198,6 +226,13 @@ dSocketResult Server::smartphoneProcessCallback() {
     return dSocketResult::SUCCESS;
 }
 //-----------------------------//
+/**
+ * @description
+ * Function is used for passing data obtained from socket in the read thread to the process thread. Should not be
+ * used anywhere other than in <b>smartphoneReadCallback()</b> function
+ * @param tBuffer Internal buffer from the <b>smartphoneReadCallback()</b> function
+ * @return Returns <b>false</b>, if the program is being terminated, and <b>true</b> otherwise
+ */
 bool Server::fillSmartphoneReadBuffer(const uint8_t* tBuffer) {
     std::unique_lock <std::mutex> Lock(mSmartphoneReadBufferMutex);
 
@@ -223,6 +258,13 @@ bool Server::fillSmartphoneReadBuffer(const uint8_t* tBuffer) {
 
     return true;
 }
+/**
+ * @description
+ * Function is used for obtaining data from the read thread inside the process thread. Should not be
+ * used anywhere other than in <b>smartphoneProcessCallback()</b> function
+ * @param tBuffer Internal buffer from the <b>smartphoneProcessCallback()</b> function
+ * @return Returns <b>false</b>, if the program is being terminated, and <b>true</b> otherwise
+ */
 bool Server::getSmartphoneReadBuffer(uint8_t* tBuffer) {
     std::unique_lock <std::mutex> Lock(mSmartphoneReadBufferMutex);
 
@@ -244,6 +286,13 @@ bool Server::getSmartphoneReadBuffer(uint8_t* tBuffer) {
     return true;
 }
 
+/**
+ * @description
+ * Function is used for passing data for writing to the socket. Can be called everywhere asynchronously, as long as
+ * it safely puts all the data to the write buffer
+ * @param tBuffer User-specified buffer to copy data from
+ * @return Returns <b>false</b>, if the program is being terminated, and <b>true</b> otherwise
+ */
 bool Server::fillSmartphoneWriteBuffer(const uint8_t* tBuffer) {
     std::unique_lock <std::mutex> Lock(mSmartphoneWriteBufferMutex);
 
@@ -269,6 +318,13 @@ bool Server::fillSmartphoneWriteBuffer(const uint8_t* tBuffer) {
 
     return true;
 }
+/**
+ * @description
+ * Function is used for obtaining data for writing to the socket inside the write thread. Should not be
+ * used anywhere other than in <b>smartphoneWriteCallback()</b> function
+ * @param tBuffer Internal buffer from the <b>smartphoneWriteCallback()</b> function
+ * @return Returns <b>false</b>, if the program is being terminated, and <b>true</b> otherwise
+ */
 bool Server::getSmartphoneWriteBuffer(uint8_t* tBuffer) {
     std::unique_lock <std::mutex> Lock(mSmartphoneWriteBufferMutex);
 
@@ -290,6 +346,11 @@ bool Server::getSmartphoneWriteBuffer(uint8_t* tBuffer) {
     return true;
 }
 //-----------------------------//
+/**
+ * @description
+ * Timer function is executed in a separate thread during server's uptime. The thread wakes up periodically to
+ * checks if it is necessary to send ping to the serial port.
+ */
 void Server::timerCallback() {
     uint8_t Packet[mPacketSize];
     SmartphoneHeader Tag = SmartphoneHeader::PING;
@@ -318,6 +379,10 @@ void Server::timerCallback() {
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
     }
 }
+/**
+ * @description
+ * Function calls serial main loop therefore should be called in a separate thread
+ */
 void Server::serialCallback() {
     ///---TODO: add proper termination---///
     if (mMonitorSTM && !mTerminate.load()) {

@@ -22,6 +22,15 @@ enum class SmartphoneHeader {
     INVALID
 };
 //-----------------------------//
+/**
+ * @description
+ * Server class provides some functions for communication between desktop <-> android smartphone (UDP protocol)
+ * and desktop <-> stm32 (serial packet-based connection). Almost all the operations are executed in separate
+ * threads: timer, reading, packet processing, writing. In order to save resources condition variables are used to
+ * suspend threads (maybe in future it will be better to migrate to C++20 and start using coroutines as long as
+ * they are more efficient in terms of resources usage). For packing data in packets binary format is used with
+ * custom protocol.
+ */
 class Server {
 public:
     Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout);
