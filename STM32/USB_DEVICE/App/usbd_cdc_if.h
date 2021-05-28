@@ -31,7 +31,7 @@
 #include "usbd_cdc.h"
 
 /* USER CODE BEGIN INCLUDE */
-
+#include "Akula.h"
 /* USER CODE END INCLUDE */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -53,9 +53,6 @@
 /* It's up to user to redefine and/or remove those define */
 #define APP_RX_DATA_SIZE        2048
 #define APP_TX_DATA_SIZE        2048
-
-#define RING_BUFFER_SIZE 		128
-#define RING_BUFFER_INCR(x)		(((x) + 1) & (RING_BUFFER_SIZE - 1))
 /* USER CODE END EXPORTED_DEFINES */
 
 /**
@@ -68,12 +65,7 @@
   */
 
 /* USER CODE BEGIN EXPORTED_TYPES */
-typedef struct RingBuffer {
-    uint32_t 	mHead;
-    uint32_t 	mTail;
 
-    uint8_t 	mBuffer[RING_BUFFER_SIZE];
-} RingBuffer;
 /* USER CODE END EXPORTED_TYPES */
 
 /**
@@ -102,7 +94,7 @@ typedef struct RingBuffer {
 extern USBD_CDC_ItfTypeDef USBD_Interface_fops_FS;
 
 /* USER CODE BEGIN EXPORTED_VARIABLES */
-extern RingBuffer gReceiveBuffer;
+
 /* USER CODE END EXPORTED_VARIABLES */
 
 /**

@@ -13552,38 +13552,38 @@ typedef struct
 #define ETH_DMASR_TPS_Stopped                         0x00000000U              /* Stopped - Reset or Stop Tx Command issued  */
 #define ETH_DMASR_TPS_Fetching_Pos                    (20U)                    
 #define ETH_DMASR_TPS_Fetching_Msk                    (0x1UL << ETH_DMASR_TPS_Fetching_Pos) /*!< 0x00100000 */
-#define ETH_DMASR_TPS_Fetching                        ETH_DMASR_TPS_Fetching_Msk /* Running - fetching the Tx descriptor */
+#define ETH_DMASR_TPS_Fetching                        ETH_DMASR_TPS_Fetching_Msk /* gRunning - fetching the Tx descriptor */
 #define ETH_DMASR_TPS_Waiting_Pos                     (21U)                    
 #define ETH_DMASR_TPS_Waiting_Msk                     (0x1UL << ETH_DMASR_TPS_Waiting_Pos) /*!< 0x00200000 */
-#define ETH_DMASR_TPS_Waiting                         ETH_DMASR_TPS_Waiting_Msk /* Running - waiting for status */
+#define ETH_DMASR_TPS_Waiting                         ETH_DMASR_TPS_Waiting_Msk /* gRunning - waiting for status */
 #define ETH_DMASR_TPS_Reading_Pos                     (20U)                    
 #define ETH_DMASR_TPS_Reading_Msk                     (0x3UL << ETH_DMASR_TPS_Reading_Pos) /*!< 0x00300000 */
-#define ETH_DMASR_TPS_Reading                         ETH_DMASR_TPS_Reading_Msk /* Running - reading the data from host memory */
+#define ETH_DMASR_TPS_Reading                         ETH_DMASR_TPS_Reading_Msk /* gRunning - reading the data from host memory */
 #define ETH_DMASR_TPS_Suspended_Pos                   (21U)                    
 #define ETH_DMASR_TPS_Suspended_Msk                   (0x3UL << ETH_DMASR_TPS_Suspended_Pos) /*!< 0x00600000 */
 #define ETH_DMASR_TPS_Suspended                       ETH_DMASR_TPS_Suspended_Msk /* Suspended - Tx Descriptor unavailable */
 #define ETH_DMASR_TPS_Closing_Pos                     (20U)                    
 #define ETH_DMASR_TPS_Closing_Msk                     (0x7UL << ETH_DMASR_TPS_Closing_Pos) /*!< 0x00700000 */
-#define ETH_DMASR_TPS_Closing                         ETH_DMASR_TPS_Closing_Msk /* Running - closing Rx descriptor */
+#define ETH_DMASR_TPS_Closing                         ETH_DMASR_TPS_Closing_Msk /* gRunning - closing Rx descriptor */
 #define ETH_DMASR_RPS_Pos                             (17U)                    
 #define ETH_DMASR_RPS_Msk                             (0x7UL << ETH_DMASR_RPS_Pos) /*!< 0x000E0000 */
 #define ETH_DMASR_RPS                                 ETH_DMASR_RPS_Msk        /* Receive process state */
 #define ETH_DMASR_RPS_Stopped                         0x00000000U              /* Stopped - Reset or Stop Rx Command issued */
 #define ETH_DMASR_RPS_Fetching_Pos                    (17U)                    
 #define ETH_DMASR_RPS_Fetching_Msk                    (0x1UL << ETH_DMASR_RPS_Fetching_Pos) /*!< 0x00020000 */
-#define ETH_DMASR_RPS_Fetching                        ETH_DMASR_RPS_Fetching_Msk /* Running - fetching the Rx descriptor */
+#define ETH_DMASR_RPS_Fetching                        ETH_DMASR_RPS_Fetching_Msk /* gRunning - fetching the Rx descriptor */
 #define ETH_DMASR_RPS_Waiting_Pos                     (17U)                    
 #define ETH_DMASR_RPS_Waiting_Msk                     (0x3UL << ETH_DMASR_RPS_Waiting_Pos) /*!< 0x00060000 */
-#define ETH_DMASR_RPS_Waiting                         ETH_DMASR_RPS_Waiting_Msk /* Running - waiting for packet */
+#define ETH_DMASR_RPS_Waiting                         ETH_DMASR_RPS_Waiting_Msk /* gRunning - waiting for packet */
 #define ETH_DMASR_RPS_Suspended_Pos                   (19U)                    
 #define ETH_DMASR_RPS_Suspended_Msk                   (0x1UL << ETH_DMASR_RPS_Suspended_Pos) /*!< 0x00080000 */
 #define ETH_DMASR_RPS_Suspended                       ETH_DMASR_RPS_Suspended_Msk /* Suspended - Rx Descriptor unavailable */
 #define ETH_DMASR_RPS_Closing_Pos                     (17U)                    
 #define ETH_DMASR_RPS_Closing_Msk                     (0x5UL << ETH_DMASR_RPS_Closing_Pos) /*!< 0x000A0000 */
-#define ETH_DMASR_RPS_Closing                         ETH_DMASR_RPS_Closing_Msk /* Running - closing descriptor */
+#define ETH_DMASR_RPS_Closing                         ETH_DMASR_RPS_Closing_Msk /* gRunning - closing descriptor */
 #define ETH_DMASR_RPS_Queuing_Pos                     (17U)                    
 #define ETH_DMASR_RPS_Queuing_Msk                     (0x7UL << ETH_DMASR_RPS_Queuing_Pos) /*!< 0x000E0000 */
-#define ETH_DMASR_RPS_Queuing                         ETH_DMASR_RPS_Queuing_Msk /* Running - queuing the receive frame into host memory */
+#define ETH_DMASR_RPS_Queuing                         ETH_DMASR_RPS_Queuing_Msk /* gRunning - queuing the receive frame into host memory */
 #define ETH_DMASR_NIS_Pos                             (16U)                    
 #define ETH_DMASR_NIS_Msk                             (0x1UL << ETH_DMASR_NIS_Pos) /*!< 0x00010000 */
 #define ETH_DMASR_NIS                                 ETH_DMASR_NIS_Msk        /* Normal interrupt summary */

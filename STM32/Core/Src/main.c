@@ -29,14 +29,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-enum PacketType {
-    REQUEST_CONN        = 0x0000AAAA,
-    JOYSTICK_COORDS     = 0x0000AAAB,
-    PING                = 0x0000AAAC,
-    ENCODER             = 0x0000AAAD,
-    INVALID             = 0x0000FFFE,
-    SHUTDOWN            = 0X0000FFFF
-};
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -96,26 +89,18 @@ int main(void) {
     MX_USB_DEVICE_Init();
     /* USER CODE BEGIN 2 */
 
-    uint8_t ReadBuffer[PACKET_SIZE];
-    uint8_t WriteBuffer[PACKET_SIZE];
-
-    uint32_t CurrentTime;
-    uint32_t TimeoutMs          = 5000;
-
-    int Connected               = 0;
-    int Running                 = 1;
-
     uint32_t WriteTag           = INVALID;
     uint32_t ReadTag            = INVALID;
 
+    uint32_t CurrentTime;
     uint8_t SendResult;
 
     /* USER CODE END 2 */
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    while (Running) {
-        if (!Connected) {
+    while (gRunning) {
+        if (!gConnected) {
             WriteTag = REQUEST_CONN;
             memcpy(WriteBuffer, &WriteTag, 4);
             CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
@@ -130,7 +115,7 @@ int main(void) {
                     CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
                     WriteTag = INVALID;
 
-                    Connected = 1;
+                    gConnected = 1;
                 }
 
                 ReadTag = INVALID;
@@ -142,9 +127,7 @@ int main(void) {
                 switch (ReadTag) {
                     case PING:
                         CurrentTime = HAL_GetTick();
-
                         WriteTag = PING;
-
                         memcpy(WriteBuffer, &WriteTag, 4);
 
                         do {
@@ -166,7 +149,7 @@ int main(void) {
 
                         break;
                     case SHUTDOWN:
-                        Running = 0;
+                        gRunning = 0;
                         break;
                     default:
                         break;
@@ -176,7 +159,7 @@ int main(void) {
             }
 
             if (HAL_GetTick() - CurrentTime > TimeoutMs) {
-                Connected = 0;
+                gConnected = 0;
                 continue;
             }
 
@@ -258,26 +241,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength) {
-    uint32_t ReceivedBytes = 0;
 
-    if ((tBuffer == NULL) || (tLength == 0)) {
-        return 0;
-    }
-
-    while (tLength--) {
-        if (gReceiveBuffer.mHead == gReceiveBuffer.mTail) {
-            return ReceivedBytes;
-        }
-
-        ReceivedBytes++;
-
-        *tBuffer++ = gReceiveBuffer.mBuffer[gReceiveBuffer.mTail];
-        gReceiveBuffer.mTail = RING_BUFFER_INCR(gReceiveBuffer.mTail);
-    }
-
-    return ReceivedBytes;
-}
 /* USER CODE END 4 */
 
 /**
