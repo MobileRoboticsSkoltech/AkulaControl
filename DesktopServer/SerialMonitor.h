@@ -38,6 +38,7 @@ public:
     //----------//
 
     void startSerialLoop();
+    void terminate();
 
     //----------//
 
@@ -47,8 +48,7 @@ private:
 
     ///---TODO: change future return value---///
     std::future <void>                          mTimerThread;
-
-    size_t                                      mPacketSize                 = 0;
+    uint32_t                                    mTimerSleepIntervalMs       = 200;
 
     uint8_t*                                    mReadBuffer                 = nullptr;
     uint8_t*                                    mWriteBuffer                = nullptr;

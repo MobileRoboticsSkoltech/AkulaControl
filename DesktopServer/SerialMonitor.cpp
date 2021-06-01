@@ -6,8 +6,11 @@
 //-----------------------------//
 SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize) {
     ///---TODO: fix timeout---///
-    mConnector      = new SerialConnector(tSerialPath, B115200, 1000, tPacketSize);
-    mPacketSize     = tPacketSize;
+    try {
+        mConnector = new SerialConnector(tSerialPath, B115200, 1000, tPacketSize);
+    } catch (const std::runtime_error& tExcept) {
+        throw;
+    }
 
     mReadBuffer     = new uint8_t[tPacketSize];
     mWriteBuffer    = new uint8_t[tPacketSize];
@@ -33,10 +36,9 @@ void SerialMonitor::startSerialLoop() {
 
     mRunning.store(true);
 
-    ///---TODO: change void to smth and deal with this value---///
     mTimerThread = std::async(std::launch::async, &SerialMonitor::timerCallback, this);
 
-    while (mConnector && mRunning.load()) {
+    while (mRunning.load()) {
         if (!mConnected.load()) {
             if (mConnector -> readSerial(mReadBuffer) > 0) {
                 memcpy(&ReadTag, mReadBuffer, 4);
@@ -80,6 +82,13 @@ void SerialMonitor::startSerialLoop() {
         }
     }
 }
+void SerialMonitor::terminate() {
+    mRunning.store(false);
+
+    if (mTimerThread.valid()) {
+        mTimerThread.wait();
+    }
+}
 //-----------------------------//
 /**
  * @description
@@ -94,7 +103,6 @@ void SerialMonitor::sendCoords() {
     }
 }
 //-----------------------------//
-///---TODO: move 200ms to a variable---///
 /**
  * @description
  * Timer function is executed in a separate thread during server's uptime. The thread wakes up periodically to
@@ -114,6 +122,6 @@ void SerialMonitor::timerCallback() {
             std::cout << "Ping" << std::endl;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(mTimerSleepIntervalMs));
     }
 }

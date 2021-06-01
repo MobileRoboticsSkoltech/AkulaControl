@@ -1,13 +1,34 @@
 #include <iostream>
+#include <signal.h>
 //-----------------------------//
 #include "Server.h"
 //-----------------------------//
-int main() {
-    Server AkulaServer(50000, 32, 2000);
+bool Running = true;
+std::condition_variable MainCV;
+std::mutex MainMutex;
+//-----------------------------//
+void sigtermHandler(int tSigNum) {
+    if (tSigNum == SIGTERM) {
+        std::scoped_lock <std::mutex> Lock(MainMutex);
+        Running = false;
+        MainCV.notify_one();
 
-    while (true) {
-
+        std::cout << "Terminating..." << std::endl;
     }
+}
+//-----------------------------//
+int main() {
+    std::unique_lock <std::mutex> MainLock(MainMutex);
+    signal(SIGTERM, sigtermHandler);
+
+    try {
+        Server AkulaServer(50000, 32, 2000);
+    } catch (const std::runtime_error& tExcept) {
+        std::cerr << tExcept.what() << std::endl;
+        return -1;
+    }
+
+    MainCV.wait(MainLock, []{ return !Running; });
 
     return 0;
 }

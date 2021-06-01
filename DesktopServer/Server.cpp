@@ -12,19 +12,24 @@
  * @param tPacketSize Number of bytes in the packets for smartphone
  * @param tConnTimeout Time in milliseconds without ping from smartphone before disconnection
  */
-Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) :
-                mPort(tPort), mPacketSize(tPacketSize), mTimeoutMs(tConnTimeout) {
-    mSocketUDP                  = new dSocket(true);
+Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPacketSize(tPacketSize), mTimeoutMs(tConnTimeout) {
+    try {
+        mMonitorSTM = new SerialMonitor("/dev/ttyStmVP", 32);
+    } catch (const std::runtime_error& tExcept) {
+        throw;
+    }
+
+    mSocketUDP = new dSocket(true);
     mSocketUDP -> init(dSocketProtocol::UDP);
     mSocketUDP -> setTimeoutOption(1000);
     mSocketUDP -> finalize(dSocketType::SERVER, tPort);
 
-    mSmartphoneReadBuffer       = new uint8_t(tPacketSize);
-    mSmartphoneWriteBuffer      = new uint8_t(tPacketSize);
+    mSmartphoneReadBuffer       = new uint8_t[tPacketSize];
+    mSmartphoneWriteBuffer      = new uint8_t[tPacketSize];
 
     //----------//
 
-    mMonitorSTM                 = new SerialMonitor("/dev/ttyStmVP", 32);
+
 
     //----------//
 
@@ -37,12 +42,66 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) :
     mSerialThread               = std::async(std::launch::async, &Server::serialCallback, this);
 }
 Server::~Server() {
+    dSocketResult SocketRes;
+    ServerResult ServerRes;
+
+    terminate();
+
+    if (mSmartphoneReadThread.valid()) {
+        if ((SocketRes = mSmartphoneReadThread.get()) != dSocketResult::SUCCESS) {
+            std::cerr << "mSmartphoneReadThread error: " << static_cast <uint32_t>(SocketRes) << std::endl;
+        }
+    }
+
+    if (mSmartphoneWriteThread.valid()) {
+        if ((SocketRes = mSmartphoneWriteThread.get()) != dSocketResult::SUCCESS) {
+            std::cerr << "mSmartphoneReadThread error: " << static_cast <uint32_t>(SocketRes) << std::endl;
+        }
+    }
+
+    if (mSmartphoneProcessThread.valid()) {
+        if ((SocketRes = mSmartphoneProcessThread.get()) != dSocketResult::SUCCESS) {
+            std::cerr << "mSmartphoneReadThread error: " << static_cast <uint32_t>(SocketRes) << std::endl;
+        }
+    }
+
+    if (mTimerThread.valid()) {
+        if ((ServerRes = mTimerThread.get()) != ServerResult::SUCCESS) {
+            std::cerr << "mTimerThread error: " << static_cast <uint32_t>(ServerRes) << std::endl;
+        }
+    }
+
+    if (mSerialThread.valid()) {
+        mSerialThread.wait();
+    }
+
     delete(mMonitorSTM);
 
     delete[](mSmartphoneReadBuffer);
     delete[](mSmartphoneWriteBuffer);
+}
+//-----------------------------//
+/**
+ * @description
+ * Function is used to properly terminate all the threads in case there is a critical error. Socket is deleted here
+ * because it reads data in blocking mode, so, deleting it will force the read() function to return 0 and lead to
+ * the thread finishing execution
+ */
+void Server::terminate() {
+    mTerminate.store(true);
 
-    delete(mSocketUDP);
+    mSmartphoneReadBufferCV.notify_all();
+    mSmartphoneWriteBufferCV.notify_all();
+
+    if (mSocketUDP) {
+        delete(mSocketUDP);
+    }
+
+    mSmartphoneReadCV.notify_one();
+    mSmartphoneWriteCV.notify_one();
+    mSmartphoneProcessCV.notify_one();
+
+    mMonitorSTM -> terminate();
 }
 //-----------------------------//
 /**
@@ -75,7 +134,7 @@ dSocketResult Server::smartphoneReadCallback() {
                     ReadTotal = 0;
                     break;
                 default:
-                    ///---TODO: Add proper termination handling---///
+                    terminate();
                     return dSocketResult::READ_ERROR;
             }
         }
@@ -83,7 +142,7 @@ dSocketResult Server::smartphoneReadCallback() {
         ReadTotal = 0;
 
         if (mTerminate.load()) {
-            ///---TODO: Add proper termination handling---///
+            break;
         }
 
         if (!mConnected.load()) {
@@ -96,7 +155,9 @@ dSocketResult Server::smartphoneReadCallback() {
             }
         }
 
-        fillSmartphoneReadBuffer(Packet);
+        if (!fillSmartphoneReadBuffer(Packet)) {
+            break;
+        }
     }
 
     return dSocketResult::SUCCESS;
@@ -119,11 +180,9 @@ dSocketResult Server::smartphoneWriteCallback() {
             return mSmartphoneWriteState || mTerminate.load();
         });
 
-        if (mTerminate.load()) {
-            ///---TODO: Add proper termination handling---///
+        if (mTerminate.load() || !getSmartphoneWriteBuffer(Packet)) {
+            break;
         }
-
-        getSmartphoneWriteBuffer(Packet);
 
         if (mConnected.load()) {
             while (WrittenTotal < mPacketSize) {
@@ -131,15 +190,16 @@ dSocketResult Server::smartphoneWriteCallback() {
                                                       reinterpret_cast <const sockaddr*>(&mSmartphoneAddr),
                                                       mSmartphoneAddrLen);
 
-//                std::cout << "Written!" << std::endl;
-
                 switch (Result) {
                     case dSocketResult::SUCCESS:
                         WrittenTotal += WrittenBytes;
                         break;
                     default:
                         ///---TODO: Add proper termination handling---///
-                        return dSocketResult::READ_ERROR;
+                        //---There could be an error related to disconnection---//
+                        //---Need to fix dSocket in the future---//
+                        terminate();
+                        return dSocketResult::WRITE_ERROR;
                 }
             }
 
@@ -147,8 +207,6 @@ dSocketResult Server::smartphoneWriteCallback() {
         }
 
         mSmartphoneWriteState = false;
-
-
     }
 
     return dSocketResult::SUCCESS;
@@ -169,11 +227,9 @@ dSocketResult Server::smartphoneProcessCallback() {
             return mSmartphoneProcessState || mTerminate.load();
         });
 
-        if (mTerminate.load()) {
-            ///---TODO: Add proper termination handling---///
+        if (mTerminate.load() || !getSmartphoneReadBuffer(Packet)) {
+            break;
         }
-
-        getSmartphoneReadBuffer(Packet);
 
         //----------//
 
@@ -205,7 +261,7 @@ dSocketResult Server::smartphoneProcessCallback() {
 
                     break;
                 case SmartphoneHeader::PING:
-//                    std::cout << "Ping" << std::endl;
+                    mSmartphoneLastPingTime = std::chrono::system_clock::now();
                     ///---TODO: Add ping handling---///
 
                     break;
@@ -214,10 +270,9 @@ dSocketResult Server::smartphoneProcessCallback() {
 
                     break;
                 case SmartphoneHeader::INVALID:
+                    std::cerr << "Invalid packet!" << std::endl;
                     break;
             }
-
-            mSmartphoneLastPacketTime = std::chrono::system_clock::now();
 
             mSmartphoneProcessState = false;
         }
@@ -351,7 +406,7 @@ bool Server::getSmartphoneWriteBuffer(uint8_t* tBuffer) {
  * Timer function is executed in a separate thread during server's uptime. The thread wakes up periodically to
  * checks if it is necessary to send ping to the serial port.
  */
-void Server::timerCallback() {
+ServerResult Server::timerCallback() {
     uint8_t Packet[mPacketSize];
     SmartphoneHeader Tag = SmartphoneHeader::PING;
     std::chrono::duration <double> Dur {};
@@ -361,7 +416,7 @@ void Server::timerCallback() {
 
     while (!mTerminate.load()) {
         if (mConnected.load()) {
-            Dur = std::chrono::system_clock::now() - mSmartphoneLastPacketTime;
+            Dur = std::chrono::system_clock::now() - mSmartphoneLastPingTime;
 
             if (Dur.count() * 1000 > mTimeoutMs) {
                 mConnected.store(false);
@@ -373,11 +428,15 @@ void Server::timerCallback() {
             std::cout << Counter << std::endl;
             Counter++;
 
-            fillSmartphoneWriteBuffer(Packet);
+            if (!fillSmartphoneWriteBuffer(Packet)) {
+                break;
+            }
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
     }
+
+    return ServerResult::SUCCESS;
 }
 /**
  * @description

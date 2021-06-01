@@ -51,7 +51,6 @@
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
