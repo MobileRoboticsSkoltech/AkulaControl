@@ -4,15 +4,18 @@
 //-----------------------------//
 #include "SerialConnector.h"
 //-----------------------------//
-///---TODO: fix description---///
 /**
- * @param tSerialPath
- * @param tSpeed
- * @param tTimeout For some unknown reason tty timeout is in deciseconds (10^-2s) but tTimeout will be in millisecond
+ * @descption
+ * Constructor opens a serial port and sets all the necessary bits (maybe not all of them)
+ * @param tSerialPath <b>/dev/tty*</b> or any symbolic link
+ * @param tSpeed Baud rate defined in bits/termios.h
+ * @param tTimeout Select timeout in milliseconds
+ * @param tPacketSize Number of bytes per packet
  */
 SerialConnector::SerialConnector(const std::string& tSerialPath, uint16_t tSpeed, uint32_t tTimeout, size_t tPacketSize) {
-    mTimeoutMs      = tTimeout;
     mSerialPort     = open(tSerialPath.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+    mTimeoutMs      = tTimeout;
+    mPacketSize     = tPacketSize;
 
     if (mSerialPort < 0) {
         std::cerr << "Failed to open the port: " << errno << "(" + std::string(strerror(errno)) + ")" << std::endl;
@@ -54,50 +57,65 @@ SerialConnector::SerialConnector(const std::string& tSerialPath, uint16_t tSpeed
         std::cerr << "Failed to set attributes: " << errno << "(" + std::string(strerror(errno)) + ")" << std::endl;
         throw std::runtime_error("SerialConnector::constructor");
     }
-
-    fcntl(mSerialPort, F_SETFL, FNDELAY);
-
-    //----------//
-
-    mPacketSize     = tPacketSize;
 }
 SerialConnector::~SerialConnector() {
     close(mSerialPort);
 }
 //-----------------------------//
+/**
+ * @description
+ * Checks how many bytes are available in the read buffer <b>(not tBuffer)</b> and fills <b>tBuffer</b>
+ * @param tBuffer mBuffer to put new bytes to
+ * @return Returns number of bytes read if success, 0 when disconnected or timeout and -1 otherwise
+ */
 ssize_t SerialConnector::readSerial(uint8_t* tBuffer) const {
-    size_t BytesTotalRead = 0;
+    ssize_t BytesTotalRead = 0;
     ssize_t BytesRead;
     int Available;
+    ///---TODO: make use of Available variable, add waiting if the number of bytes is less than packet size---///
 
-//    while (BytesTotalRead < mPacketSize) {
+    while (BytesTotalRead < mPacketSize) {
         if (checkNewData()) {
             if (ioctl(mSerialPort, TIOCINQ, &Available) != -1) {
-                std::cout << Available << std::endl;
-
                 BytesRead = read(mSerialPort, tBuffer + BytesTotalRead, mPacketSize - BytesTotalRead);
 
-                if (BytesRead < 1) {
-                    std::cerr << "readSerial: write smth" << std::endl;
+                if (BytesRead == 0) {
                     return 0;
+                } else if (BytesRead < 0) {
+                    std::cerr << "readSerial: read error" << std::endl;
+                    return -1;
                 } else {
                     BytesTotalRead += BytesRead;
                 }
             } else {
-                std::cerr << "readSerial: write smth" << std::endl;
+                std::cerr << "readSerial: ioctl error" << std::endl;
                 return -1;
             }
+        } else {
+            return 0;
         }
-//    }
+    }
 
     return BytesTotalRead;
 }
+/**
+ * @description
+ * Writes to serial port from the provided buffer <b>tBuffer</b>
+ * @param tBuffer mBuffer to write bytes from
+ * @return Returns the number of bytes written or negative value (error) otherwise
+ */
 ssize_t SerialConnector::writeSerial(const uint8_t* tBuffer) const {
     return write(mSerialPort, tBuffer, mPacketSize);
 }
 //-----------------------------//
+/**
+ * @description
+ * Checks whether there are bytes available in the read buffer and waits for some specified time before
+ * printing timeout
+ * @return Returns <b>false</b> in case of timeout or error, <b>true</b> otherwise
+ */
 bool SerialConnector::checkNewData() const {
-    fd_set  ReadFDs;
+    fd_set ReadFDs;
     int Count;
     timespec Timeout {
             .tv_sec     = mTimeoutMs / 1000,
@@ -114,13 +132,15 @@ bool SerialConnector::checkNewData() const {
     } else {
         switch (Count) {
             case 0:
-//                std::cout << "Timeout" << std::endl;
+                std::cerr << "checkNewData: timeout" << std::endl;
                 return false;
             case -1:
-                std::cerr << "Throw exception or smth" << std::endl;
+                ///---TODO: return some kind of error---///
+                std::cerr << "checkNewData: pselect error -1" << std::endl;
                 return false;
             default:
-                std::cerr << "It's bad or idk" << std::endl;
+                ///---TODO: return some kind of error---///
+                std::cerr << "checkNewData: pselect error " << Count << std::endl;
                 return false;
         }
     }

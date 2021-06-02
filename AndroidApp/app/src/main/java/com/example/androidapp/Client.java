@@ -1,6 +1,7 @@
 package com.example.androidapp;
 //-----------------------------//
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Message;
 import android.os.SystemClock;
 
@@ -104,6 +105,22 @@ public class Client {
         Buffer.put(Zeros);
 
         fillWriteBuffer(Packet);
+    }
+
+    public void sendLatencyTest() {
+        byte[] Packet = new byte[mPacketSize];
+        byte[] Zeros = new byte[mPacketSize - 4];
+        Header Tag = Header.LATENCY;
+
+        ByteBuffer Buffer = ByteBuffer.wrap(Packet);
+        Buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        Buffer.putInt(Tag.getValue());
+        Buffer.put(Zeros);
+
+        fillWriteBuffer(Packet);
+
+        mLatencyTestStart = System.nanoTime();
     }
 
     public boolean isRunning() {
@@ -225,6 +242,7 @@ public class Client {
                 ByteBuffer Buffer = ByteBuffer.wrap(Packet);
 
                 Tag = Header.fromInt(Integer.reverseBytes(Buffer.getInt()));
+                Message Msg = mHandler.obtainMessage();
 
                 switch (Objects.requireNonNull(Tag)) {
                     case REQUEST_CONN:
@@ -256,9 +274,17 @@ public class Client {
                             return;
                         }
 
-                        Message Msg = mHandler.obtainMessage();
                         Msg.what = Header.PING.getValue();
+                        mHandler.sendMessage(Msg);
 
+                        break;
+                    case LATENCY:
+                        Bundle Bund = new Bundle(1);
+                        double Ms = (double)(System.nanoTime() - mLatencyTestStart) / 1.0e6;
+
+                        Bund.putDouble("Latency", Ms);
+                        Msg.setData(Bund);
+                        Msg.what = Header.LATENCY_RESPONSE.getValue();
                         mHandler.sendMessage(Msg);
 
                         break;
@@ -510,4 +536,8 @@ public class Client {
 
     private boolean                     mReadBufferState            = false;
     private boolean                     mWriteBufferState           = false;
+
+    //----------//
+
+    private long                        mLatencyTestStart;
 }

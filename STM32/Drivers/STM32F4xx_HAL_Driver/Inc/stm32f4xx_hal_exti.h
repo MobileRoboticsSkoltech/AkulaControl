@@ -100,27 +100,27 @@ typedef struct
 #define EXTI_LINE_13                       (EXTI_GPIO       | 0x0Du)    /*!< External interrupt line 13 */
 #define EXTI_LINE_14                       (EXTI_GPIO       | 0x0Eu)    /*!< External interrupt line 14 */
 #define EXTI_LINE_15                       (EXTI_GPIO       | 0x0Fu)    /*!< External interrupt line 15 */
-#define EXTI_LINE_16                       (EXTI_CONFIG     | 0x10u)    /*!< External interrupt line 16 Connected to the PVD Output */
-#define EXTI_LINE_17                       (EXTI_CONFIG     | 0x11u)    /*!< External interrupt line 17 Connected to the RTC Alarm event */
+#define EXTI_LINE_16                       (EXTI_CONFIG     | 0x10u)    /*!< External interrupt line 16 gConnected to the PVD Output */
+#define EXTI_LINE_17                       (EXTI_CONFIG     | 0x11u)    /*!< External interrupt line 17 gConnected to the RTC Alarm event */
 #if defined(EXTI_IMR_IM18)
-#define EXTI_LINE_18                       (EXTI_CONFIG     | 0x12u)    /*!< External interrupt line 18 Connected to the USB OTG FS Wakeup from suspend event */
+#define EXTI_LINE_18                       (EXTI_CONFIG     | 0x12u)    /*!< External interrupt line 18 gConnected to the USB OTG FS Wakeup from suspend event */
 #else
 #define EXTI_LINE_18                       (EXTI_RESERVED   | 0x12u)    /*!< No interrupt supported in this line */
 #endif /* EXTI_IMR_IM18 */
 #if defined(EXTI_IMR_IM19)
-#define EXTI_LINE_19                       (EXTI_CONFIG     | 0x13u)    /*!< External interrupt line 19 Connected to the Ethernet Wakeup event */
+#define EXTI_LINE_19                       (EXTI_CONFIG     | 0x13u)    /*!< External interrupt line 19 gConnected to the Ethernet Wakeup event */
 #else
 #define EXTI_LINE_19                       (EXTI_RESERVED   | 0x13u)    /*!< No interrupt supported in this line */
 #endif /* EXTI_IMR_IM19 */
 #if defined(EXTI_IMR_IM20)
-#define EXTI_LINE_20                       (EXTI_CONFIG     | 0x14u)    /*!< External interrupt line 20 Connected to the USB OTG HS (configured in FS) Wakeup event  */
+#define EXTI_LINE_20                       (EXTI_CONFIG     | 0x14u)    /*!< External interrupt line 20 gConnected to the USB OTG HS (configured in FS) Wakeup event  */
 #else
 #define EXTI_LINE_20                       (EXTI_RESERVED   | 0x14u)    /*!< No interrupt supported in this line */
 #endif /* EXTI_IMR_IM20 */
-#define EXTI_LINE_21                       (EXTI_CONFIG     | 0x15u)    /*!< External interrupt line 21 Connected to the RTC Tamper and Time Stamp events */
-#define EXTI_LINE_22                       (EXTI_CONFIG     | 0x16u)    /*!< External interrupt line 22 Connected to the RTC Wakeup event */
+#define EXTI_LINE_21                       (EXTI_CONFIG     | 0x15u)    /*!< External interrupt line 21 gConnected to the RTC Tamper and Time Stamp events */
+#define EXTI_LINE_22                       (EXTI_CONFIG     | 0x16u)    /*!< External interrupt line 22 gConnected to the RTC Wakeup event */
 #if defined(EXTI_IMR_IM23)
-#define EXTI_LINE_23                       (EXTI_CONFIG     | 0x17u)    /*!< External interrupt line 23 Connected to the LPTIM1 asynchronous event */
+#define EXTI_LINE_23                       (EXTI_CONFIG     | 0x17u)    /*!< External interrupt line 23 gConnected to the LPTIM1 asynchronous event */
 #endif /* EXTI_IMR_IM23 */
 
 /**

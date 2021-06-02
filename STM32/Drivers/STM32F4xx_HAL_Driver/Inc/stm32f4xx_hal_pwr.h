@@ -334,7 +334,7 @@ void HAL_PWR_DisableSEVOnPend(void);
 /** @defgroup PWR_PVD_EXTI_Line PWR PVD EXTI Line
   * @{
   */
-#define PWR_EXTI_LINE_PVD  ((uint32_t)EXTI_IMR_MR16)  /*!< External interrupt line 16 Connected to the PVD EXTI Line */
+#define PWR_EXTI_LINE_PVD  ((uint32_t)EXTI_IMR_MR16)  /*!< External interrupt line 16 gConnected to the PVD EXTI Line */
 /**
   * @}
   */

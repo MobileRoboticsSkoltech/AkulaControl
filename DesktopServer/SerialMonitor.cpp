@@ -4,9 +4,15 @@
 //-----------------------------//
 #include "SerialMonitor.h"
 //-----------------------------//
-SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize) {
-    ///---TODO: fix timeout---///
-    mConnector      = new SerialConnector(tSerialPath, B115200, 1000, tPacketSize);
+SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize, SerialMessenger* tMessenger) {
+    try {
+        mConnector = new SerialConnector(tSerialPath, B115200, 2000, tPacketSize);
+    } catch (const std::runtime_error& tExcept) {
+        throw;
+    }
+
+    mPacketSize     = tPacketSize;
+    mMessenger      = tMessenger;
 
     mReadBuffer     = new uint8_t[tPacketSize];
     mWriteBuffer    = new uint8_t[tPacketSize];
@@ -18,6 +24,12 @@ SerialMonitor::~SerialMonitor() {
     delete[](mWriteBuffer);
 }
 //-----------------------------//
+///---TODO: add timeout to re-enable connection procedure and send timeout state to the smartphone---///
+/**
+ * @description
+ * The function is the main loop for serial communication, there connection to the serial port is established and
+ * packets from the port are processed
+ */
 void SerialMonitor::startSerialLoop() {
     auto ReadTag = PacketType::INVALID;
     auto WriteTag = PacketType::INVALID;
@@ -26,10 +38,9 @@ void SerialMonitor::startSerialLoop() {
 
     mRunning.store(true);
 
-    ///---TODO: change void to smth and deal with this value---///
     mTimerThread = std::async(std::launch::async, &SerialMonitor::timerCallback, this);
 
-    while (mConnector && mRunning.load()) {
+    while (mRunning.load()) {
         if (!mConnected.load()) {
             if (mConnector -> readSerial(mReadBuffer) > 0) {
                 memcpy(&ReadTag, mReadBuffer, 4);
@@ -63,6 +74,16 @@ void SerialMonitor::startSerialLoop() {
                     case PacketType::JOYSTICK_COORDS:
                         std::cout << "Coord response!" << std::endl;
                         break;
+                    case PacketType::LATENCY:
+                        {
+                            std::scoped_lock<std::mutex> Lock(mMessenger -> mMutex);
+                            memcpy(mMessenger -> mBuffer, mReadBuffer, mPacketSize);
+                            mMessenger -> mNewData.store(true);
+                        }
+
+                        mMessenger -> mDataCV.notify_one();
+
+                        break;
                     default:
                         std::cerr << "Something wend wrong: " << static_cast <uint32_t>(ReadTag) << std::endl;
                         mRunning.store(false);
@@ -73,7 +94,18 @@ void SerialMonitor::startSerialLoop() {
         }
     }
 }
+void SerialMonitor::terminate() {
+    mRunning.store(false);
+
+    if (mTimerThread.valid()) {
+        mTimerThread.wait();
+    }
+}
 //-----------------------------//
+/**
+ * @description
+ * Temporary function (maybe idk)
+ */
 void SerialMonitor::sendCoords() {
     auto Tag = static_cast <uint32_t>(PacketType::JOYSTICK_COORDS);
     memcpy(mWriteBuffer, &Tag, 4);
@@ -82,7 +114,20 @@ void SerialMonitor::sendCoords() {
         mConnector -> writeSerial(mWriteBuffer);
     }
 }
+void SerialMonitor::sendLatencyTest() {
+    auto Tag = static_cast <uint32_t>(PacketType::LATENCY);
+    memcpy(mWriteBuffer, &Tag, 4);
+
+    if (mConnector) {
+        mConnector -> writeSerial(mWriteBuffer);
+    }
+}
 //-----------------------------//
+/**
+ * @description
+ * Timer function is executed in a separate thread during server's uptime. The thread wakes up periodically to
+ * checks if it is necessary to send ping to the smartphone.
+ */
 void SerialMonitor::timerCallback() {
     while (mRunning.load()) {
         mPingDuration = std::chrono::system_clock::now() - mLastPing;
@@ -97,6 +142,6 @@ void SerialMonitor::timerCallback() {
             std::cout << "Ping" << std::endl;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(mTimerSleepIntervalMs));
     }
 }

@@ -6,7 +6,9 @@ public enum Header {
     PING(2),
     STATUS(3),
     INVALID(4),
-    DISCONNECTED(5);
+    DISCONNECTED(5),
+    LATENCY(6),
+    LATENCY_RESPONSE(7);
 
     private final int mValue;
 
@@ -27,6 +29,10 @@ public enum Header {
             return INVALID;
         } else if (tValue == 5) {
             return DISCONNECTED;
+        } else if (tValue == 6) {
+            return LATENCY;
+        } else if (tValue == 7) {
+            return LATENCY_RESPONSE;
         } else {
             return null;
         }
