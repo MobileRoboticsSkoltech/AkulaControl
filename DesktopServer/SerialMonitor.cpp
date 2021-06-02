@@ -4,13 +4,15 @@
 //-----------------------------//
 #include "SerialMonitor.h"
 //-----------------------------//
-SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize) {
-    ///---TODO: fix timeout---///
+SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize, SerialMessenger* tMessenger) {
     try {
-        mConnector = new SerialConnector(tSerialPath, B115200, 1000, tPacketSize);
+        mConnector = new SerialConnector(tSerialPath, B115200, 2000, tPacketSize);
     } catch (const std::runtime_error& tExcept) {
         throw;
     }
+
+    mPacketSize     = tPacketSize;
+    mMessenger      = tMessenger;
 
     mReadBuffer     = new uint8_t[tPacketSize];
     mWriteBuffer    = new uint8_t[tPacketSize];
@@ -72,6 +74,16 @@ void SerialMonitor::startSerialLoop() {
                     case PacketType::JOYSTICK_COORDS:
                         std::cout << "Coord response!" << std::endl;
                         break;
+                    case PacketType::LATENCY:
+                        {
+                            std::scoped_lock<std::mutex> Lock(mMessenger -> mMutex);
+                            memcpy(mMessenger -> mBuffer, mReadBuffer, mPacketSize);
+                            mMessenger -> mNewData.store(true);
+                        }
+
+                        mMessenger -> mDataCV.notify_one();
+
+                        break;
                     default:
                         std::cerr << "Something wend wrong: " << static_cast <uint32_t>(ReadTag) << std::endl;
                         mRunning.store(false);
@@ -96,6 +108,14 @@ void SerialMonitor::terminate() {
  */
 void SerialMonitor::sendCoords() {
     auto Tag = static_cast <uint32_t>(PacketType::JOYSTICK_COORDS);
+    memcpy(mWriteBuffer, &Tag, 4);
+
+    if (mConnector) {
+        mConnector -> writeSerial(mWriteBuffer);
+    }
+}
+void SerialMonitor::sendLatencyTest() {
+    auto Tag = static_cast <uint32_t>(PacketType::LATENCY);
     memcpy(mWriteBuffer, &Tag, 4);
 
     if (mConnector) {

@@ -12,6 +12,7 @@ import android.text.InputFilter;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
 import java.net.SocketException;
@@ -29,6 +30,8 @@ public class MainActivity extends AppCompatActivity {
         public void handleMessage(Message tMsg) {
             super.handleMessage(tMsg);
 
+            System.out.println(Header.fromInt(tMsg.what));
+
             switch (Header.fromInt(tMsg.what)) {
                 case PING:
                     if (!mStateLED) {
@@ -42,17 +45,29 @@ public class MainActivity extends AppCompatActivity {
                     mStateLED = false;
 
                     break;
+                case LATENCY_RESPONSE:
+                    Bundle Bund = tMsg.getData();
+                    double Latency = Bund.getDouble("Latency");
+                    LatencyText.get().setText(String.valueOf(Latency));
+
+                    System.out.println("Printed latency");
+
+                    break;
             }
         }
 
         void setLED(ConnIndicator tLED) {
             mLED = new WeakReference <>(tLED);
         }
+        void setLatencyText(TextView tView) {
+            LatencyText = new WeakReference <>(tView);
+        }
 
         //----------//
 
         private boolean mStateLED = false;
         private WeakReference <ConnIndicator> mLED;
+        private WeakReference <TextView> LatencyText;
     }
 
     //----------//
@@ -97,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         EditText IpLine = findViewById(R.id.ipText);
         EditText PortLine = findViewById(R.id.portText);
         Button RequestButton = findViewById(R.id.requestButton);
+        Button LatencyButton = findViewById(R.id.latbutton);
 
         SlidePanel SliderPanel = findViewById(R.id.sliderPanel);
 
@@ -104,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
         PortLine.setFilters(new InputFilter[] {PortFilter});
 
         mTestHandler.setLED(findViewById(R.id.connIndicator));
+        mTestHandler.setLatencyText(findViewById(R.id.textView2));
 
         RequestButton.setOnClickListener(tView -> {
             IpLine.clearFocus();
@@ -132,6 +149,10 @@ public class MainActivity extends AppCompatActivity {
 
         Joy.setCustomObjectListener((tPosX, tPosY, tID) -> {
             mNetworkThread.sendJoystickCoords(tPosX, tPosY);
+        });
+
+        LatencyButton.setOnClickListener(tView -> {
+            mNetworkThread.sendLatencyTest();
         });
     }
     @Override

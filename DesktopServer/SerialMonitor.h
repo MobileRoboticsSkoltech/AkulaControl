@@ -9,6 +9,13 @@
 //-----------------------------//
 #include "SerialConnector.h"
 //-----------------------------//
+struct SerialMessenger {
+    std::condition_variable     mDataCV;
+    std::atomic_bool            mNewData        = false;
+    std::mutex                  mMutex;
+    uint32_t                    mBuffer[32];
+};
+//-----------------------------//
 ///---TODO: maybe it's better to clear read buffer before processing packet---///
 /**
  * @description
@@ -26,13 +33,14 @@ public:
         JOYSTICK_COORDS     = 0x0000AAAB,
         PING                = 0x0000AAAC,
         ENCODER             = 0x0000AAAD,
+        LATENCY             = 0x0000AAAE,   /**< Used in an empty packet to measure the latency between smartphone and stm32 board */
         INVALID             = 0x0000FFFE,   /**< Mostly used as a default value */
         SHUTDOWN            = 0X0000FFFF    /**< Added to match the same tag in the stm32 program, so sanitizer wouldn't highlight a warning about endless loop */
     };
 
     //----------//
 
-    SerialMonitor(const std::string& tSerialPath, size_t tPacketSize);
+    SerialMonitor(const std::string& tSerialPath, size_t tPacketSize, SerialMessenger* tMessenger);
     ~SerialMonitor();
 
     //----------//
@@ -43,8 +51,10 @@ public:
     //----------//
 
     void sendCoords();
+    void sendLatencyTest();
 private:
     SerialConnector*                            mConnector                  = nullptr;
+    SerialMessenger*                            mMessenger                  = nullptr;
 
     ///---TODO: change future return value---///
     std::future <void>                          mTimerThread;
@@ -52,6 +62,8 @@ private:
 
     uint8_t*                                    mReadBuffer                 = nullptr;
     uint8_t*                                    mWriteBuffer                = nullptr;
+
+    size_t                                      mPacketSize                 = 0;
 
     std::atomic_bool                            mRunning                    = false;
     std::atomic_bool                            mConnected                  = false;

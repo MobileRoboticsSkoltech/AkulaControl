@@ -147,6 +147,17 @@ int main(void) {
                         WriteTag = INVALID;
 
                         break;
+                    case LATENCY:
+                        WriteTag = LATENCY;
+                        memcpy(WriteBuffer, &WriteTag, 4);
+
+                        do {
+                            SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                        } while (SendResult == USBD_BUSY);
+
+                        WriteTag = INVALID;
+
+                        break;
                     case SHUTDOWN:
                         gRunning = 0;
                         break;

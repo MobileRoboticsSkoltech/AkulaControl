@@ -65,7 +65,7 @@ SerialConnector::~SerialConnector() {
 /**
  * @description
  * Checks how many bytes are available in the read buffer <b>(not tBuffer)</b> and fills <b>tBuffer</b>
- * @param tBuffer Buffer to put new bytes to
+ * @param tBuffer mBuffer to put new bytes to
  * @return Returns number of bytes read if success, 0 when disconnected or timeout and -1 otherwise
  */
 ssize_t SerialConnector::readSerial(uint8_t* tBuffer) const {
@@ -101,7 +101,7 @@ ssize_t SerialConnector::readSerial(uint8_t* tBuffer) const {
 /**
  * @description
  * Writes to serial port from the provided buffer <b>tBuffer</b>
- * @param tBuffer Buffer to write bytes from
+ * @param tBuffer mBuffer to write bytes from
  * @return Returns the number of bytes written or negative value (error) otherwise
  */
 ssize_t SerialConnector::writeSerial(const uint8_t* tBuffer) const {

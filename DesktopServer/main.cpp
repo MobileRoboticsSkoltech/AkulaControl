@@ -1,5 +1,5 @@
 #include <iostream>
-#include <signal.h>
+#include <csignal>
 //-----------------------------//
 #include "Server.h"
 //-----------------------------//
@@ -19,10 +19,11 @@ void sigtermHandler(int tSigNum) {
 //-----------------------------//
 int main() {
     std::unique_lock <std::mutex> MainLock(MainMutex);
+    Server* AkulaServer;
     signal(SIGTERM, sigtermHandler);
 
     try {
-        Server AkulaServer(50000, 32, 2000);
+        AkulaServer = new Server(50000, 32, 20000);
     } catch (const std::runtime_error& tExcept) {
         std::cerr << tExcept.what() << std::endl;
         return -1;

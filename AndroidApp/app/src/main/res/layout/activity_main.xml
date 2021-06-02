@@ -39,6 +39,22 @@
             android:id="@+id/joystick"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:text="TextView"
+            android:textColor="#FFFFFF"/>
+
+        <Button
+            android:id="@+id/latbutton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            android:text="Latency" />
     </RelativeLayout>
 
     <com.example.androidapp.SlidePanel
@@ -81,6 +97,7 @@
                 android:layout_margin="8dp"
                 android:ems="10"
                 android:hint="IP address"
+                android:text="10.42.0.1"
                 android:inputType="textPersonName" />
 
             <EditText
@@ -90,6 +107,7 @@
                 android:layout_margin="8dp"
                 android:ems="10"
                 android:hint="Port"
+                android:text="50000"
                 android:inputType="textPersonName" />
 
             <Button

@@ -10,6 +10,10 @@ import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @description
+ * The class operates as a connector between Client and UI
+ */
 class NetworkThread extends HandlerThread {
     public NetworkThread(MainActivity.HandlerUI tHandler) {
         super("Network");
@@ -66,12 +70,25 @@ class NetworkThread extends HandlerThread {
                         }
 
                         break;
+                    case LATENCY:
+                        if (mConnected) {
+                            mClientUDP.sendLatencyTest();
+                        }
+
+                        break;
+                    case LATENCY_RESPONSE:
+                        System.out.println("Sending latency to UI...");
+                        Msg.copyFrom(tMsg);
+                        mHandlerUI.sendMessage(Msg);
+
+                        break;
                 }
             }
         };
 
         mClientUDP = new Client(32, 2000, mHandler);
     }
+
 
     void sendConnectionRequest(String tIP, int tPort) throws SocketException, UnknownHostException {
         String IpRange = "(?:0|[1-9]|[1-9][0-9]|1[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
@@ -123,6 +140,17 @@ class NetworkThread extends HandlerThread {
                 Msg.setData(Bund);
                 Msg.what = Header.JOYSTICK_COORDS.getValue();
 
+                mHandler.sendMessage(Msg);
+            }
+        }
+    }
+
+    void sendLatencyTest() {
+        if (mHandler != null) {
+            Message Msg = mHandler.obtainMessage();
+
+            if (Msg != null) {
+                Msg.what = Header.LATENCY.getValue();
                 mHandler.sendMessage(Msg);
             }
         }

@@ -27,6 +27,7 @@ enum PacketType {
     JOYSTICK_COORDS     = 0x0000AAAB,
     PING                = 0x0000AAAC,
     ENCODER             = 0x0000AAAD,
+    LATENCY             = 0x0000AAAE,
     INVALID             = 0x0000FFFE,   /**< Mostly used as a default value */
     SHUTDOWN            = 0X0000FFFF    /**< Added to match the same tag in the stm32 program, so sanitizer wouldn't highlight a warning about endless loop */
 };

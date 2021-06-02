@@ -13,12 +13,18 @@
  * @param tConnTimeout Time in milliseconds without ping from smartphone before disconnection
  */
 Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPacketSize(tPacketSize), mTimeoutMs(tConnTimeout) {
+    mMessengerSTM = new SerialMessenger;
+
     try {
-        mMonitorSTM = new SerialMonitor("/dev/ttyStmVP", 32);
+        mMonitorSTM = new SerialMonitor("/dev/ttyStmVP", 32, mMessengerSTM);
     } catch (const std::runtime_error& tExcept) {
+        delete(mMessengerSTM);
         throw;
     }
 
+    //----------//
+
+    ///---TODO: check the result values---///
     mSocketUDP = new dSocket(true);
     mSocketUDP -> init(dSocketProtocol::UDP);
     mSocketUDP -> setTimeoutOption(1000);
@@ -29,10 +35,6 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     //----------//
 
-
-
-    //----------//
-
     ///---TODO: change void to smth and deal with it---///
     mSmartphoneReadThread       = std::async(std::launch::async, &Server::smartphoneReadCallback, this);
     mSmartphoneWriteThread      = std::async(std::launch::async, &Server::smartphoneWriteCallback, this);
@@ -40,6 +42,7 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     mTimerThread                = std::async(std::launch::async, &Server::timerCallback, this);
     mSerialThread               = std::async(std::launch::async, &Server::serialCallback, this);
+    mSerialDataThread           = std::async(std::launch::async, &Server::serialDataCallback, this);
 }
 Server::~Server() {
     dSocketResult SocketRes;
@@ -75,7 +78,12 @@ Server::~Server() {
         mSerialThread.wait();
     }
 
+    if (mSerialDataThread.valid()) {
+        mSerialDataThread.wait();
+    }
+
     delete(mMonitorSTM);
+    delete(mMessengerSTM);
 
     delete[](mSmartphoneReadBuffer);
     delete[](mSmartphoneWriteBuffer);
@@ -101,6 +109,8 @@ void Server::terminate() {
     mSmartphoneWriteCV.notify_one();
     mSmartphoneProcessCV.notify_one();
 
+    mMessengerSTM -> mDataCV.notify_one();
+
     mMonitorSTM -> terminate();
 }
 //-----------------------------//
@@ -122,7 +132,7 @@ dSocketResult Server::smartphoneReadCallback() {
     dSocketResult Result;
 
     while (!mTerminate.load()) {
-        while (ReadTotal < mPacketSize) {
+        while (ReadTotal < mPacketSize && !mTerminate.load()) {
             Result = mSocketUDP -> readFromAddress(Packet + ReadTotal, mPacketSize - ReadTotal, &ReadBytes,
                                                    reinterpret_cast <sockaddr*>(&ClientAddr), &ClientAddrLen);
 
@@ -134,8 +144,10 @@ dSocketResult Server::smartphoneReadCallback() {
                     ReadTotal = 0;
                     break;
                 default:
-                    terminate();
-                    return dSocketResult::READ_ERROR;
+                    ///---TODO: skip some particular errors and terminate on others---///
+//                    terminate();
+//                    return dSocketResult::READ_ERROR;
+                    break;
             }
         }
 
@@ -246,7 +258,9 @@ dSocketResult Server::smartphoneProcessCallback() {
         } else {
             switch (Tag) {
                 case SmartphoneHeader::REQUEST_CONN:
+                    mSmartphoneLastPingTime = std::chrono::system_clock::now();
                     mConnected.store(true);
+                    std::cout << "Smartphone request" << std::endl;
                     break;
                 case SmartphoneHeader::JOYSTICK_COORDS:
                     float PosX;
@@ -271,6 +285,11 @@ dSocketResult Server::smartphoneProcessCallback() {
                     break;
                 case SmartphoneHeader::INVALID:
                     std::cerr << "Invalid packet!" << std::endl;
+                    break;
+                case SmartphoneHeader::LATENCY:
+                    std::cout << "Latency test from smartphone" << std::endl;
+                    mMonitorSTM -> sendLatencyTest();
+
                     break;
             }
 
@@ -433,7 +452,7 @@ ServerResult Server::timerCallback() {
             }
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     return ServerResult::SUCCESS;
@@ -446,5 +465,34 @@ void Server::serialCallback() {
     ///---TODO: add proper termination---///
     if (mMonitorSTM && !mTerminate.load()) {
         mMonitorSTM -> startSerialLoop();
+    }
+}
+
+///---TODO: reading data without connection can create vulnerability - fix it---///
+void Server::serialDataCallback() {
+    std::unique_lock <std::mutex> Lock(mMessengerSTM -> mMutex);
+    auto StmTag = SerialMonitor::PacketType::INVALID;
+    auto SmartphoneTag = SmartphoneHeader::INVALID;
+    uint8_t Packet[mPacketSize];
+
+    while (!mTerminate.load()) {
+        mMessengerSTM -> mDataCV.wait(Lock, [this]{ return mMessengerSTM -> mNewData.load(); });
+        memcpy(&StmTag, mMessengerSTM -> mBuffer, 4);
+
+        switch (StmTag) {
+            case SerialMonitor::PacketType::LATENCY:
+                SmartphoneTag = SmartphoneHeader::LATENCY;
+                memcpy(Packet, &SmartphoneTag, 4);
+                fillSmartphoneWriteBuffer(Packet);
+                std::cout << "Latency test from STM32" << std::endl;
+
+                break;
+            default:
+                break;
+        }
+
+
+        mMessengerSTM -> mNewData.store(false);
+        StmTag = SerialMonitor::PacketType::INVALID;
     }
 }

@@ -19,13 +19,16 @@ enum class SmartphoneHeader {
     JOYSTICK_COORDS,
     PING,
     STATUS,
-    INVALID
+    INVALID,
+    DISCONNECTED,
+    LATENCY
 };
 enum class ServerResult {
     SUCCESS,
     SOCKET_ERROR
 };
 //-----------------------------//
+///---TODO: it should be possible to run the server without opening a serial port, otherwise it will crash the program---///
 /**
  * @description
  * Server class provides some functions for communication between desktop <-> android smartphone (UDP protocol)
@@ -94,11 +97,14 @@ private:
     //----------//
 
     SerialMonitor*                              mMonitorSTM                             = nullptr;
+    SerialMessenger*                            mMessengerSTM                           = nullptr;
 
     //----------//
 
+    ///---TODO: investigate whether there are better approaches to obtain data from the serial port---///
     std::future <ServerResult>                  mTimerThread;
     std::future <void>                          mSerialThread;
+    std::future <void>                          mSerialDataThread;
 
     //----------//
 
@@ -122,6 +128,7 @@ private:
 
     ServerResult timerCallback();
     void serialCallback();
+    void serialDataCallback();
 };
 //-----------------------------//
 #endif
