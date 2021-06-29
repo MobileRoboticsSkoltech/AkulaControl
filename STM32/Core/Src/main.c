@@ -99,6 +99,12 @@ int main(void)
     uint32_t WriteTag           = INVALID;
     uint32_t ReadTag            = INVALID;
 
+    int32_t LeftPWM;
+    int32_t RightPWM;
+
+    int LeftMinus = 0;
+    int RightMinus = 0;
+
     uint32_t CurrentTime;
     uint8_t SendResult;
 
@@ -130,6 +136,7 @@ int main(void)
         } else {
             if (readSerial(ReadBuffer, PACKET_SIZE)) {
                 memcpy(&ReadTag, ReadBuffer, 4);
+                float Ratio;
 
                 switch (ReadTag) {
                     case PING:
@@ -148,7 +155,66 @@ int main(void)
                         WriteTag = JOYSTICK_COORDS;
                         memcpy(WriteBuffer, &WriteTag, 4);
 
-                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 100);
+                        memcpy(&LeftPWM, ReadBuffer + 4, 4);
+                        memcpy(&RightPWM, ReadBuffer + 8, 4);
+
+                        if (LeftPWM > 140) {
+                            LeftPWM = 140;
+                        }
+
+                        if (LeftPWM < -140) {
+                            LeftPWM = -140;
+                        }
+
+                        if (RightPWM > 140) {
+                            RightPWM = 140;
+                        }
+
+                        if (RightPWM < -140) {
+                            RightPWM = -140;
+                        }
+
+                        //----------//
+
+                        Ratio = 100.0f / 140.0f;
+
+                        if (LeftPWM < 0) {
+                            if (LeftMinus == 0) {
+                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
+                                LeftMinus = 1;
+                            }
+
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM * Ratio + 40);
+                        }
+
+                        if (LeftPWM >= 0) {
+                            if (LeftMinus == 1) {
+                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_RESET);
+                                LeftMinus = 0;
+                            }
+
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, LeftPWM * Ratio + 40);
+                        }
+
+                        if (RightPWM < 0) {
+                            if (RightMinus == 0) {
+                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
+                                RightMinus = 1;
+                            }
+
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, -RightPWM * Ratio + 40);
+                        }
+
+                        if (RightPWM >= 0) {
+                            if (RightMinus == 1) {
+                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_RESET);
+                                RightMinus = 0;
+                            }
+
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, RightPWM * Ratio + 40);
+                        }
+
+                        //----------//
 
                         do {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
@@ -311,9 +377,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4|GPIO_PIN_6, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_9, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PD4 PD6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB9 */
   GPIO_InitStruct.Pin = GPIO_PIN_9;

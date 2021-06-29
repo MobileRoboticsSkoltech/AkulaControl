@@ -50,7 +50,7 @@ public:
 
     //----------//
 
-    void sendCoords();
+    void sendPWM(int32_t tLeftPWM, int32_t tRightPWM);
     void sendLatencyTest();
 private:
     SerialConnector*                            mConnector                  = nullptr;

@@ -106,9 +106,12 @@ void SerialMonitor::terminate() {
  * @description
  * Temporary function (maybe idk)
  */
-void SerialMonitor::sendCoords() {
+void SerialMonitor::sendPWM(int32_t tLeftPWM, int32_t tRightPWM) {
     auto Tag = static_cast <uint32_t>(PacketType::JOYSTICK_COORDS);
+
     memcpy(mWriteBuffer, &Tag, 4);
+    memcpy(mWriteBuffer + 4, &tLeftPWM, 4);
+    memcpy(mWriteBuffer + 8, &tRightPWM, 4);
 
     if (mConnector) {
         mConnector -> writeSerial(mWriteBuffer);
