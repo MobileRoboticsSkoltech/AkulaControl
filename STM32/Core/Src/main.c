@@ -129,6 +129,13 @@ int main(void)
                     WriteTag = INVALID;
 
                     gConnected = 1;
+                } else {
+                    WriteTag = INVALID;
+                    memcpy(WriteBuffer, &WriteTag, 4);
+                    memcpy(WriteBuffer + 4, &ReadTag, 4);
+                    CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+
+                    clearBuffer();
                 }
 
                 ReadTag = INVALID;
@@ -246,6 +253,9 @@ int main(void)
 
             if (HAL_GetTick() - CurrentTime > TimeoutMs) {
                 gConnected = 0;
+                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+                __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
+
                 continue;
             }
 

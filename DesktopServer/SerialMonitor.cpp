@@ -84,6 +84,14 @@ void SerialMonitor::startSerialLoop() {
                         mMessenger -> mDataCV.notify_one();
 
                         break;
+                    case PacketType::INVALID:
+                    {
+                        uint32_t Tag;
+                        memcpy(&Tag, mReadBuffer + 4, 4);
+                        std::cerr << "Invalid " << Tag << std::endl;
+                    }
+
+                        break;
                     default:
                         std::cerr << "Something wend wrong: " << static_cast <uint32_t>(ReadTag) << std::endl;
                         mRunning.store(false);

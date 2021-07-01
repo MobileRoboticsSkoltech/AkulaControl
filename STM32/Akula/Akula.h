@@ -44,5 +44,6 @@ extern uint32_t TimeoutMs;
 //-----------------------------//
 uint32_t ringNextIndex(uint32_t tCurrentIndex);
 uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength);
+void clearBuffer();
 //-----------------------------//
 #endif
