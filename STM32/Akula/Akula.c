@@ -55,3 +55,6 @@ uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength) {
 
     return ReceivedBytes;
 }
+void clearBuffer() {
+    gReceiveBuffer.mTail = gReceiveBuffer.mHead;
+}

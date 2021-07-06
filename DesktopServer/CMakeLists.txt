@@ -20,6 +20,6 @@ add_executable(DesktopServer
         Server.cpp
         SerialConnector.cpp
         SerialMonitor.cpp
-        lib/dSocket/dSocket.cpp)
+        lib/dSocket/dSocket.cpp MotorPWM.cpp MotorPWM.h)
 target_link_libraries(DesktopServer
         Threads::Threads)

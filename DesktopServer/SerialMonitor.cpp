@@ -84,6 +84,14 @@ void SerialMonitor::startSerialLoop() {
                         mMessenger -> mDataCV.notify_one();
 
                         break;
+                    case PacketType::INVALID:
+                    {
+                        uint32_t Tag;
+                        memcpy(&Tag, mReadBuffer + 4, 4);
+                        std::cerr << "Invalid " << Tag << std::endl;
+                    }
+
+                        break;
                     default:
                         std::cerr << "Something wend wrong: " << static_cast <uint32_t>(ReadTag) << std::endl;
                         mRunning.store(false);
@@ -106,9 +114,12 @@ void SerialMonitor::terminate() {
  * @description
  * Temporary function (maybe idk)
  */
-void SerialMonitor::sendCoords() {
+void SerialMonitor::sendPWM(int32_t tLeftPWM, int32_t tRightPWM) {
     auto Tag = static_cast <uint32_t>(PacketType::JOYSTICK_COORDS);
+
     memcpy(mWriteBuffer, &Tag, 4);
+    memcpy(mWriteBuffer + 4, &tLeftPWM, 4);
+    memcpy(mWriteBuffer + 8, &tRightPWM, 4);
 
     if (mConnector) {
         mConnector -> writeSerial(mWriteBuffer);
@@ -121,6 +132,18 @@ void SerialMonitor::sendLatencyTest() {
     if (mConnector) {
         mConnector -> writeSerial(mWriteBuffer);
     }
+}
+void SerialMonitor::sendStop() {
+    auto Tag = static_cast <uint32_t>(PacketType::STOP);
+    memcpy(mWriteBuffer, &Tag, 4);
+
+    if (mConnector) {
+        mConnector -> writeSerial(mWriteBuffer);
+    }
+}
+//-----------------------------//
+bool SerialMonitor::isConnected() {
+    return mConnected.load();
 }
 //-----------------------------//
 /**

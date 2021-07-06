@@ -16,11 +16,15 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
     mMessengerSTM = new SerialMessenger;
 
     try {
-        mMonitorSTM = new SerialMonitor("/dev/ttyStmVP", 32, mMessengerSTM);
+        mMonitorSTM = new SerialMonitor("/dev/ttyACM2", 32, mMessengerSTM);
     } catch (const std::runtime_error& tExcept) {
         delete(mMessengerSTM);
         throw;
     }
+
+    //----------//
+
+    mMotorPWM = new MotorPWM(140, 100);
 
     //----------//
 
@@ -233,6 +237,7 @@ dSocketResult Server::smartphoneProcessCallback() {
     uint8_t Packet[mPacketSize];
     std::unique_lock <std::mutex> Lock(mSmartphoneProcessMutex);
     SmartphoneHeader Tag;
+    std::pair <int32_t, int32_t> Pair;
 
     while (!mTerminate.load()) {
         mSmartphoneProcessCV.wait(Lock, [this] {
@@ -269,13 +274,21 @@ dSocketResult Server::smartphoneProcessCallback() {
                     memcpy(&PosX, Packet + 4, 4);
                     memcpy(&PosY, Packet + 8, 4);
 
-                    std::cout << PosX << " : " << PosY << std::endl;
+                    Pair = mMotorPWM -> getMotorsPWM(PosX, -PosY);
 
-                    mMonitorSTM -> sendCoords();
+                    std::cout << Pair.first << " : " << Pair.second << std::endl;
+
+                    ///---TODO: change this---///
+
+//                    if (PosY >= 0) {
+                        mMonitorSTM -> sendPWM(Pair.first, Pair.second);
+//                    }
 
                     break;
                 case SmartphoneHeader::PING:
                     mSmartphoneLastPingTime = std::chrono::system_clock::now();
+
+                    std::cout << "Smartphone ping" << std::endl;
                     ///---TODO: Add ping handling---///
 
                     break;
@@ -442,9 +455,13 @@ ServerResult Server::timerCallback() {
 
                 mSmartphoneAddr     = {};
                 mSmartphoneAddrLen  = 0;
+
+                if (mMonitorSTM -> isConnected()) {
+                    mMonitorSTM -> sendStop();
+                }
             }
 
-            std::cout << Counter << std::endl;
+//            std::cout << Counter << std::endl;
             Counter++;
 
             if (!fillSmartphoneWriteBuffer(Packet)) {
@@ -487,6 +504,11 @@ void Server::serialDataCallback() {
                 std::cout << "Latency test from STM32" << std::endl;
 
                 break;
+//            ///---Smth is wrong with this---///
+//            case SerialMonitor::PacketType::JOYSTICK_COORDS:
+//                std::cout << "Coords test from STM32" << std::endl;
+//
+//                break;
             default:
                 break;
         }

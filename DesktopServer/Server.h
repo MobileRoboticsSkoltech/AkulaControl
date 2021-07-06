@@ -13,6 +13,7 @@
 //-----------------------------//
 #include "dSocket/dSocket.h"
 #include "SerialMonitor.h"
+#include "MotorPWM.h"
 //-----------------------------//
 enum class SmartphoneHeader {
     REQUEST_CONN,
@@ -105,6 +106,10 @@ private:
     std::future <ServerResult>                  mTimerThread;
     std::future <void>                          mSerialThread;
     std::future <void>                          mSerialDataThread;
+
+    //----------//
+
+    MotorPWM*                                   mMotorPWM                               = nullptr;
 
     //----------//
 

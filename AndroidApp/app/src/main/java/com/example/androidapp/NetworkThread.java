@@ -89,6 +89,13 @@ class NetworkThread extends HandlerThread {
         mClientUDP = new Client(32, 2000, mHandler);
     }
 
+    void close() {
+        System.out.println("Closing...");
+        if (mClientUDP.isRunning()) {
+            mClientUDP.close();
+        }
+    }
+
 
     void sendConnectionRequest(String tIP, int tPort) throws SocketException, UnknownHostException {
         String IpRange = "(?:0|[1-9]|[1-9][0-9]|1[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
