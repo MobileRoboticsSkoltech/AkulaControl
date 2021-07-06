@@ -7,6 +7,7 @@
 //-----------------------------//
 #include <cstdint>
 #include <cmath>
+#include <iostream>
 //-----------------------------//
 class MotorPWM {
 public:

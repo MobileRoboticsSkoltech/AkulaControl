@@ -22,22 +22,24 @@ std::pair <int32_t, int32_t> MotorPWM::getMotorsPWM(float tPosX, float tPosY) co
 
     if (tPosX >= 0 && tPosY >= 0) {
         Multiplier = float(mMaxPWM) * 2 / (2 * tPosY / tPosX + 1);
+        AreaRadius = std::sqrt(std::pow(Multiplier, 2.0) + std::pow(-0.5 * Multiplier + mMaxPWM, 2.0));
     } else if (tPosX < 0 && tPosY >= 0) {
         Multiplier = float(mMaxPWM) * 2 / (2 * tPosY / tPosX - 1);
+        AreaRadius = std::sqrt(std::pow(Multiplier, 2.0) + std::pow(0.5 * Multiplier + mMaxPWM, 2.0));
     } else if (tPosX < 0 && tPosY < 0) {
         Multiplier = -float(mMaxPWM) * 2 / (2 * tPosY / tPosX + 1);
+        AreaRadius = std::sqrt(std::pow(Multiplier, 2.0) + std::pow(-0.5 * Multiplier - mMaxPWM, 2.0));
     } else {
         Multiplier = -float(mMaxPWM) * 2 / (2 * tPosY / tPosX - 1);
+        AreaRadius = std::sqrt(std::pow(Multiplier, 2.0) + std::pow(0.5 * Multiplier - mMaxPWM, 2.0));
     }
-
-    AreaRadius = std::abs(Multiplier * std::sqrt(1 + powf(tPosY / tPosX, 2.0)));
 
     NewX = tPosX / mMaxCoordRadius * AreaRadius;
     NewY = tPosY / mMaxCoordRadius * AreaRadius;
 
     std::pair <int32_t, int32_t> PWM {
-            NewY - NewX / 2,
-            NewY + NewX / 2
+            NewY + NewX / 2,
+            NewY - NewX / 2
     };
 
     return PWM;

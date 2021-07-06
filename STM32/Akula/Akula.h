@@ -10,6 +10,8 @@
 //-----------------------------//
 #define RING_BUFFER_SIZE    128
 #define PACKET_SIZE			32
+#define MAX_PWM             140
+#define OFFSET_PWM          40
 //-----------------------------//
 typedef struct RingBuffer {
     uint32_t 	mHead;
@@ -28,6 +30,7 @@ enum PacketType {
     PING                = 0x0000AAAC,
     ENCODER             = 0x0000AAAD,
     LATENCY             = 0x0000AAAE,
+    STOP                = 0x0000AAAF,   /**< Sets PWM to zero */
     INVALID             = 0x0000FFFE,   /**< Mostly used as a default value */
     SHUTDOWN            = 0X0000FFFF    /**< Added to match the same tag in the stm32 program, so sanitizer wouldn't highlight a warning about endless loop */
 };

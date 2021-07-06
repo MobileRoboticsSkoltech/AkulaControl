@@ -16,7 +16,7 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
     mMessengerSTM = new SerialMessenger;
 
     try {
-        mMonitorSTM = new SerialMonitor("/dev/ttyACM1", 32, mMessengerSTM);
+        mMonitorSTM = new SerialMonitor("/dev/ttyACM2", 32, mMessengerSTM);
     } catch (const std::runtime_error& tExcept) {
         delete(mMessengerSTM);
         throw;
@@ -287,6 +287,8 @@ dSocketResult Server::smartphoneProcessCallback() {
                     break;
                 case SmartphoneHeader::PING:
                     mSmartphoneLastPingTime = std::chrono::system_clock::now();
+
+                    std::cout << "Smartphone ping" << std::endl;
                     ///---TODO: Add ping handling---///
 
                     break;
@@ -453,6 +455,10 @@ ServerResult Server::timerCallback() {
 
                 mSmartphoneAddr     = {};
                 mSmartphoneAddrLen  = 0;
+
+                if (mMonitorSTM -> isConnected()) {
+                    mMonitorSTM -> sendStop();
+                }
             }
 
 //            std::cout << Counter << std::endl;

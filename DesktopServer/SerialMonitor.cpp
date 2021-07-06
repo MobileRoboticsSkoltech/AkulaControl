@@ -133,6 +133,18 @@ void SerialMonitor::sendLatencyTest() {
         mConnector -> writeSerial(mWriteBuffer);
     }
 }
+void SerialMonitor::sendStop() {
+    auto Tag = static_cast <uint32_t>(PacketType::STOP);
+    memcpy(mWriteBuffer, &Tag, 4);
+
+    if (mConnector) {
+        mConnector -> writeSerial(mWriteBuffer);
+    }
+}
+//-----------------------------//
+bool SerialMonitor::isConnected() {
+    return mConnected.load();
+}
 //-----------------------------//
 /**
  * @description

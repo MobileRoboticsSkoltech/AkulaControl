@@ -102,8 +102,8 @@ int main(void)
     int32_t LeftPWM;
     int32_t RightPWM;
 
-    int LeftMinus = 0;
-    int RightMinus = 0;
+    int LeftMinus = 1;
+    int RightMinus = 1;
 
     uint32_t CurrentTime;
     uint8_t SendResult;
@@ -165,60 +165,70 @@ int main(void)
                         memcpy(&LeftPWM, ReadBuffer + 4, 4);
                         memcpy(&RightPWM, ReadBuffer + 8, 4);
 
-                        if (LeftPWM > 140) {
-                            LeftPWM = 140;
+                        if (LeftPWM > MAX_PWM) {
+                            LeftPWM = MAX_PWM;
                         }
 
-                        if (LeftPWM < -140) {
-                            LeftPWM = -140;
+                        if (LeftPWM < -MAX_PWM) {
+                            LeftPWM = -MAX_PWM;
                         }
 
-                        if (RightPWM > 140) {
-                            RightPWM = 140;
+                        if (RightPWM > MAX_PWM) {
+                            RightPWM = MAX_PWM;
                         }
 
-                        if (RightPWM < -140) {
-                            RightPWM = -140;
+                        if (RightPWM < -MAX_PWM) {
+                            RightPWM = -MAX_PWM;
                         }
 
                         //----------//
 
-                        Ratio = 100.0f / 140.0f;
+                        Ratio = 100.0f / MAX_PWM;
 
                         if (LeftPWM < 0) {
                             if (LeftMinus == 0) {
-                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
+                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_RESET);
                                 LeftMinus = 1;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM * Ratio + 40);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM * Ratio + OFFSET_PWM);
                         }
 
-                        if (LeftPWM >= 0) {
+                        if (LeftPWM > 0) {
                             if (LeftMinus == 1) {
-                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_RESET);
+                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_SET);
                                 LeftMinus = 0;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, LeftPWM * Ratio + 40);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, LeftPWM * Ratio + OFFSET_PWM);
                         }
 
                         if (RightPWM < 0) {
                             if (RightMinus == 0) {
-                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
+                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_RESET);
                                 RightMinus = 1;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, -RightPWM * Ratio + 40);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, -RightPWM * Ratio + OFFSET_PWM);
                         }
 
-                        if (RightPWM >= 0) {
+                        if (RightPWM > 0) {
                             if (RightMinus == 1) {
-                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_RESET);
+                                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_4, GPIO_PIN_SET);
                                 RightMinus = 0;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, RightPWM * Ratio + 40);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, RightPWM * Ratio + OFFSET_PWM);
+                        }
+
+                        //----------//
+
+                        if (LeftPWM == 0) {
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, OFFSET_PWM);
+                        }
+
+                        if (RightPWM == 0) {
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, OFFSET_PWM);
                         }
 
                         //----------//
@@ -239,6 +249,11 @@ int main(void)
                         } while (SendResult == USBD_BUSY);
 
                         WriteTag = INVALID;
+
+                        break;
+                    case STOP:
+                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
+                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
 
                         break;
                     case SHUTDOWN:
@@ -356,7 +371,7 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 140;
+  sConfigOC.Pulse = 0;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
