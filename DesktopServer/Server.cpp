@@ -16,7 +16,7 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
     mMessengerSTM = new SerialMessenger;
 
     try {
-        mMonitorSTM = new SerialMonitor("/dev/ttyACM2", 32, mMessengerSTM);
+        mMonitorSTM = new SerialMonitor("/dev/ttyACM1", 32, mMessengerSTM);
     } catch (const std::runtime_error& tExcept) {
         delete(mMessengerSTM);
         throw;
@@ -24,7 +24,7 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     //----------//
 
-    mMotorPWM = new MotorPWM(140, 100);
+    mMotorPWM = new MotorPWM(139, 100);
 
     //----------//
 

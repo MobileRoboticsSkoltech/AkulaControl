@@ -60,7 +60,12 @@ include_directories(
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F407xx)
 
-file(GLOB_RECURSE SOURCES "Core/*.*" "Middlewares/*.*" "USB_DEVICE/*.*" "Drivers/*.*" "Akula/*.*")
+file(GLOB_RECURSE SOURCES
+        "Core/*.*"
+        "Middlewares/*.*"
+        "USB_DEVICE/*.*"
+        "Drivers/*.*"
+        "Akula/*.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F407VGTX_FLASH.ld)
 

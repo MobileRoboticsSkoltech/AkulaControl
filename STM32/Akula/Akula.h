@@ -10,8 +10,8 @@
 //-----------------------------//
 #define RING_BUFFER_SIZE    128
 #define PACKET_SIZE			32
-#define MAX_PWM             140
-#define OFFSET_PWM          40
+#define MAX_PWM             139
+#define OFFSET_PWM          39
 //-----------------------------//
 typedef struct RingBuffer {
     uint32_t 	mHead;
