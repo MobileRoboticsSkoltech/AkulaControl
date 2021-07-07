@@ -51,6 +51,12 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProdu
 3. Calculate the prescaler using formula ```Prescaler = TIM3Clock / UpdateFrequency / (Period + 1) - 1```
 4. In "**TIM3 -> Parameter Settings**" set "**Prescaler**" (5 in our case) and also "**Counter Period**" and "**Pulse**" for both channels (139 in our case)
 
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/TIM3.png)
+
+### Final clocks
+
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/Clock.png)
+
 # Setting Clion for stm32 development (optional)
 
 ### Preparing the environment:
