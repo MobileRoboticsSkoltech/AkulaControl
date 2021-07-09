@@ -13,6 +13,7 @@
 //-----------------------------//
 #include "dSocket/dSocket.h"
 #include "SerialMonitor.h"
+#include "MotorPWM.h"
 //-----------------------------//
 enum class SmartphoneHeader {
     REQUEST_CONN,
@@ -28,7 +29,6 @@ enum class ServerResult {
     SOCKET_ERROR
 };
 //-----------------------------//
-///---TODO: it should be possible to run the server without opening a serial port, otherwise it will crash the program---///
 /**
  * @description
  * Server class provides some functions for communication between desktop <-> android smartphone (UDP protocol)
@@ -67,7 +67,6 @@ private:
 
     //----------//
 
-    ///---TODO: change return type in case there are server related errors needed to be processed---///
     std::future <dSocketResult>                 mSmartphoneReadThread;
     std::future <dSocketResult>                 mSmartphoneWriteThread;
     std::future <dSocketResult>                 mSmartphoneProcessThread;
@@ -101,10 +100,13 @@ private:
 
     //----------//
 
-    ///---TODO: investigate whether there are better approaches to obtain data from the serial port---///
     std::future <ServerResult>                  mTimerThread;
     std::future <void>                          mSerialThread;
     std::future <void>                          mSerialDataThread;
+
+    //----------//
+
+    MotorPWM*                                   mMotorPWM                               = nullptr;
 
     //----------//
 

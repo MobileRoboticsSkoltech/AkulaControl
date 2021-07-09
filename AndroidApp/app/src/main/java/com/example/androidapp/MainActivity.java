@@ -1,6 +1,9 @@
 package com.example.androidapp;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
 
 import android.content.Context;
 import android.os.Bundle;
@@ -72,10 +75,20 @@ public class MainActivity extends AppCompatActivity {
 
     //----------//
 
+    public class MinimizeObserver implements LifecycleObserver {
+        @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+        void onAppBackgrounded() {
+            mNetworkThread.close();
+        }
+    }
+
+    //----------//
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getLifecycle().addObserver(new MinimizeObserver());
 
         InputFilter IpFilter = (tSrc, tSrcStart, tSrcEnd, tDest, tDestStart, tDestEnd) -> {
             String IpRange = "(?:0|[1-9]|[1-9][0-9]|1[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";

@@ -430,6 +430,7 @@ public class Client {
     void timerFunc() {
         while (true) {
             synchronized (mTimerMonitor) {
+
                 if (mConnected.get() && Duration.between(mLastPacketTime, LocalTime.now()).toMillis() > mTimeoutMs) {
                     mConnected.set(false);
                     close();

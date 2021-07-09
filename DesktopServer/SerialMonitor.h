@@ -34,6 +34,7 @@ public:
         PING                = 0x0000AAAC,
         ENCODER             = 0x0000AAAD,
         LATENCY             = 0x0000AAAE,   /**< Used in an empty packet to measure the latency between smartphone and stm32 board */
+        STOP                = 0x0000AAAF,   /**< Sets PWM to zero */
         INVALID             = 0x0000FFFE,   /**< Mostly used as a default value */
         SHUTDOWN            = 0X0000FFFF    /**< Added to match the same tag in the stm32 program, so sanitizer wouldn't highlight a warning about endless loop */
     };
@@ -50,8 +51,13 @@ public:
 
     //----------//
 
-    void sendCoords();
+    void sendPWM(int32_t tLeftPWM, int32_t tRightPWM);
     void sendLatencyTest();
+    void sendStop();
+
+    //----------//
+
+    bool isConnected();
 private:
     SerialConnector*                            mConnector                  = nullptr;
     SerialMessenger*                            mMessenger                  = nullptr;

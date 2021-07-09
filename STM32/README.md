@@ -27,9 +27,35 @@ In order to have constant name for serial port (instead of ttyACM[0-9]) you need
 4. Create custom udev rule using "**sudo nano /etc/udev/rules.d/49-custom.rules**"
 5. Add line (enter your own idProduct or other parameters and tty name you want to use for vitual port)
 ```
-KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", SYMLINK="ttyStmVP"
+KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", MODE="0666", SYMLINK="ttyStmVP"
 ```
 6. Unplug and plug again virtual port micro usb
+
+# Setting timer for motor control
+
+### Pinout:
+
+1. In TIM3 set Clock Source to "**Internal Clock**"
+2. Set Channel3 to "**PWM Generation CH3**" and Channel4 to "**PWM Generation CH4**"
+3. For direction control set pins to "**GPIO_Output**" (in our case it is PD4 and PD6), you can skip it, if you need only one direction
+
+### Clock Configuration:
+
+1. As long as TIM3 is related to "**APB2**", set "**APB2 Prescaler**" to "**/8**"
+2. You should get 42MHz for "**APB2 timer clocks**" (this value is very important!)
+
+### PWM parameters
+
+1. Define the update frequency of PWM signals, try to make it higher to avoid unpleasant high pitch noise (in our case it is 60kHz)
+2. Define the period or the number of steps for one PWM signal (in our case it is 139)
+3. Calculate the prescaler using formula ```Prescaler = TIM3Clock / UpdateFrequency / (Period + 1) - 1```
+4. In "**TIM3 -> Parameter Settings**" set "**Prescaler**" (5 in our case) and also "**Counter Period**" and "**Pulse**" for both channels (139 in our case)
+
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/TIM3.png)
+
+### Final clocks
+
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/Clock.png)
 
 # Setting Clion for stm32 development (optional)
 
