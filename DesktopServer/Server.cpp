@@ -16,7 +16,7 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
     mMessengerSTM = new SerialMessenger;
 
     try {
-        mMonitorSTM = new SerialMonitor("/dev/ttyACM2", 32, mMessengerSTM);
+        mMonitorSTM = new SerialMonitor("/dev/ttyACM1", 32, mMessengerSTM);
     } catch (const std::runtime_error& tExcept) {
         delete(mMessengerSTM);
         throw;
@@ -24,11 +24,11 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     //----------//
 
-    mMotorPWM = new MotorPWM(140, 100);
+    mMotorPWM = new MotorPWM(139, 100);
 
     //----------//
 
-    ///---TODO: check the result values---///
+    ///---TODO: check the result values (fix dSocket beforehand)---///
     mSocketUDP = new dSocket(true);
     mSocketUDP -> init(dSocketProtocol::UDP);
     mSocketUDP -> setTimeoutOption(1000);
@@ -39,7 +39,6 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     //----------//
 
-    ///---TODO: change void to smth and deal with it---///
     mSmartphoneReadThread       = std::async(std::launch::async, &Server::smartphoneReadCallback, this);
     mSmartphoneWriteThread      = std::async(std::launch::async, &Server::smartphoneWriteCallback, this);
     mSmartphoneProcessThread    = std::async(std::launch::async, &Server::smartphoneProcessCallback, this);
@@ -149,9 +148,8 @@ dSocketResult Server::smartphoneReadCallback() {
                     break;
                 default:
                     ///---TODO: skip some particular errors and terminate on others---///
-//                    terminate();
-//                    return dSocketResult::READ_ERROR;
-                    break;
+                    terminate();
+                    return dSocketResult::READ_ERROR;
             }
         }
 
@@ -275,21 +273,13 @@ dSocketResult Server::smartphoneProcessCallback() {
                     memcpy(&PosY, Packet + 8, 4);
 
                     Pair = mMotorPWM -> getMotorsPWM(PosX, -PosY);
-
                     std::cout << Pair.first << " : " << Pair.second << std::endl;
-
-                    ///---TODO: change this---///
-
-//                    if (PosY >= 0) {
-                        mMonitorSTM -> sendPWM(Pair.first, Pair.second);
-//                    }
+                    mMonitorSTM -> sendPWM(Pair.first, Pair.second);
 
                     break;
                 case SmartphoneHeader::PING:
                     mSmartphoneLastPingTime = std::chrono::system_clock::now();
-
                     std::cout << "Smartphone ping" << std::endl;
-                    ///---TODO: Add ping handling---///
 
                     break;
                 case SmartphoneHeader::STATUS:
@@ -496,21 +486,11 @@ void Server::serialDataCallback() {
         mMessengerSTM -> mDataCV.wait(Lock, [this]{ return mMessengerSTM -> mNewData.load(); });
         memcpy(&StmTag, mMessengerSTM -> mBuffer, 4);
 
-        switch (StmTag) {
-            case SerialMonitor::PacketType::LATENCY:
-                SmartphoneTag = SmartphoneHeader::LATENCY;
-                memcpy(Packet, &SmartphoneTag, 4);
-                fillSmartphoneWriteBuffer(Packet);
-                std::cout << "Latency test from STM32" << std::endl;
-
-                break;
-//            ///---Smth is wrong with this---///
-//            case SerialMonitor::PacketType::JOYSTICK_COORDS:
-//                std::cout << "Coords test from STM32" << std::endl;
-//
-//                break;
-            default:
-                break;
+        if (StmTag == SerialMonitor::PacketType::LATENCY) {
+            SmartphoneTag = SmartphoneHeader::LATENCY;
+            memcpy(Packet, &SmartphoneTag, 4);
+            fillSmartphoneWriteBuffer(Packet);
+            std::cout << "Latency test from STM32" << std::endl;
         }
 
 

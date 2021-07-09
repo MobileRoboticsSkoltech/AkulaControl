@@ -93,7 +93,7 @@ void SerialMonitor::startSerialLoop() {
 
                         break;
                     default:
-                        std::cerr << "Something wend wrong: " << static_cast <uint32_t>(ReadTag) << std::endl;
+                        std::cerr << "Something went wrong: " << static_cast <uint32_t>(ReadTag) << std::endl;
                         mRunning.store(false);
                 }
 
