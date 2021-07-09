@@ -27,7 +27,7 @@ In order to have constant name for serial port (instead of ttyACM[0-9]) you need
 4. Create custom udev rule using "**sudo nano /etc/udev/rules.d/49-custom.rules**"
 5. Add line (enter your own idProduct or other parameters and tty name you want to use for vitual port)
 ```
-KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", SYMLINK="ttyStmVP"
+KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", MODE="0666", SYMLINK="ttyStmVP"
 ```
 6. Unplug and plug again virtual port micro usb
 

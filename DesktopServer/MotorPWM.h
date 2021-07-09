@@ -9,6 +9,10 @@
 #include <cmath>
 #include <iostream>
 //-----------------------------//
+/**
+ * @description
+ * This class implements everything related to motors and provides data suitable for transferring to MCU
+ */
 class MotorPWM {
 public:
     MotorPWM(uint32_t tMaxPWM, float tMaxCoordRadius);

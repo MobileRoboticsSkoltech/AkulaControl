@@ -276,8 +276,6 @@ int main(void)
 
                 continue;
             }
-
-//            HAL_Delay(100);
         }
     /* USER CODE END WHILE */
 
