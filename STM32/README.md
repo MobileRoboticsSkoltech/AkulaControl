@@ -44,6 +44,8 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProdu
 1. As long as TIM3 is related to "**APB2**", set "**APB2 Prescaler**" to "**/8**"
 2. You should get 42MHz for "**APB2 timer clocks**" (this value is very important!)
 
+**P.S. It's APB1 - I messed up, so, will fix it in the nearest future (anyway, you can just set APB1 clock to 42Mhz to make it right)**
+
 ### PWM parameters
 
 1. Define the update frequency of PWM signals, try to make it higher to avoid unpleasant high pitch noise (in our case it is 60kHz)
@@ -51,11 +53,11 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProdu
 3. Calculate the prescaler using formula ```Prescaler = TIM3Clock / UpdateFrequency / (Period + 1) - 1```
 4. In "**TIM3 -> Parameter Settings**" set "**Prescaler**" (5 in our case) and also "**Counter Period**" and "**Pulse**" for both channels (139 in our case)
 
-![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/TIM3.png)
+![alt text](https://raw.githubusercontent.com/MobileRoboticsSkoltech/AkulaControl/main/Images/TIM3.png)
 
 ### Final clocks
 
-![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/Clock.png)
+![alt text](https://raw.githubusercontent.com/MobileRoboticsSkoltech/AkulaControl/main/Images/Clock.png)
 
 # Setting Clion for stm32 development (optional)
 
