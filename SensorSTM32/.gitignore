@@ -1,0 +1,7 @@
+cmake-build-*
+.settings/
+.cproject
+.mxproject
+.project
+.idea/
+CMakeLists_template.txt
