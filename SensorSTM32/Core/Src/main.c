@@ -33,7 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MPU9250_DATA_SIZE   14
+#define MPU9250_DATA_SIZE   22
 #define PWR_MGMT_1_REG      107
 #define INT_ENABLE_REG      56
 #define INT_PIN_CFG_REG     55
@@ -58,8 +58,8 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
-uint8_t ElapsedTime[3];                     //---sec-min-hour---//
-uint8_t TimestampIMU[2];                    //---sec-min---//
+uint32_t ElapsedSeconds = 0;
+uint32_t TimeTIM5;
 uint8_t ReadIMUFlag = 0;
 uint8_t RawDataIMU[MPU9250_DATA_SIZE];
 uint8_t DataToSend[MPU9250_DATA_SIZE];
@@ -99,7 +99,11 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+#ifdef DEBUG
+    if (__HAL_RCC_GET_SYSCLK_SOURCE() == RCC_CFGR_SWS_PLL) {
+        HAL_RCC_DeInit();
+    }
+#endif
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -123,12 +127,26 @@ int main(void)
 
     HAL_TIM_OC_Start_IT(&htim5, TIM_CHANNEL_1);
     HAL_Delay(10);
+
+    uint16_t TempVal;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+      if (ReadIMUFlag == 1) { // if IMU data is ready to be read
+          HAL_NVIC_DisableIRQ(EXTI9_5_IRQn);
+          ReadIMUFlag = 0;
+
+          readRegSPI(RawDataIMU, 14, ACCEL_DATA_REG, 1000);
+          fillPacket();
+
+          while (CDC_Transmit_FS(DataToSend, 22) == USBD_BUSY) {}
+
+          if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_9) != RESET) {__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_9);}
+          HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+      }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -330,10 +348,14 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PA4 */
   GPIO_InitStruct.Pin = GPIO_PIN_4;
@@ -341,6 +363,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PD12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC9 */
   GPIO_InitStruct.Pin = GPIO_PIN_9;
@@ -362,6 +391,8 @@ uint16_t setupMPU(void) {
     uint8_t InterruptBits = 1;      //---Data Ready interrupt---//
 
     HAL_StatusTypeDef Result;
+
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 
     if ((Result = writeRegSPI(PwrMngBits, PWR_MGMT_1_REG, 1000)) != HAL_OK) {
         return Result;
@@ -415,34 +446,29 @@ HAL_StatusTypeDef readRegSPI(uint8_t* tDestData, size_t tSize, uint8_t tRegAddre
     return Result;
 }
 void fillPacket() {
+    ///---TODO: Add magnetometer---///
 
+    uint16_t TempVal;
+
+    memcpy(DataToSend, &ElapsedSeconds, 4);
+    memcpy(DataToSend + 4, &TimeTIM5, 4);
+
+    for (int i = 0; i < 14; i += 2) {
+        TempVal = (uint16_t)(RawDataIMU[i] << 8 | RawDataIMU[i + 1]);
+        memcpy(DataToSend + i + 8, &TempVal, 2);
+    }
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t tPin) {
     if (tPin == GPIO_PIN_9) {
         ReadIMUFlag = 1;
-
-        TimestampIMU[0] = ElapsedTime[0];
-        TimestampIMU[1] = ElapsedTime[1];
+        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
     }
 }
 void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef* htim) {
     if (htim -> Instance == htim5.Instance) {
-        ElapsedTime[0]++;
-
-        if (ElapsedTime[0] >= 60) {                 //---Seconds---//
-            ElapsedTime[0] = 0;
-            ElapsedTime[1]++;
-
-            if (ElapsedTime[1] >= 60) {             //---Minutes---//
-                ElapsedTime[1] = 0;
-                ElapsedTime[2]++;
-
-                if (ElapsedTime[2] >= 24) {         //---Hours---//
-                    ElapsedTime[2] = 0;
-                }
-            }
-        }
+        ElapsedSeconds++;
+        TimeTIM5 = TIM5 -> CNT;
     }
 }
 /* USER CODE END 4 */
