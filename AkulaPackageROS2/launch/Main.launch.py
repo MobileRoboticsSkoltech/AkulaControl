@@ -35,5 +35,10 @@ def generate_launch_description():
             package='BaslerROS2',
             executable='BaslerNode',
             name='Basler'
+        ),
+        Node(
+            package='AkulaPackage',
+            executable='AkulaMainNode',
+            name='AkulaIMU'
         )
     ])

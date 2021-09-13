@@ -19,17 +19,21 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 
-add_executable(AkulaMainNode src/AkulaMainNode.cpp)
+add_executable(AkulaMainNode
+        src/AkulaMainNode.cpp
+        src/SerialConnector.cpp)
 target_include_directories(AkulaMainNode PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(AkulaMainNode
         rclcpp
-        std_msgs)
+        std_msgs
+        sensor_msgs)
 
 install(TARGETS AkulaMainNode
   DESTINATION lib/${PROJECT_NAME})
@@ -47,11 +51,11 @@ endif()
 
 install(DIRECTORY
   launch
-  DESTINATION share/${PROJECT_NAME}/
+  DESTINATION lib/${PROJECT_NAME}/
 )
 install(DIRECTORY
   model
-  DESTINATION share/${PROJECT_NAME}/
+  DESTINATION lib/${PROJECT_NAME}/
 )
 
 ament_package()
