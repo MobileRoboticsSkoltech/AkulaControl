@@ -13,6 +13,10 @@ if (UNIX AND NOT APPLE)
 endif()
 #---Threads---#
 
+#---YAML---#
+find_package(yaml-cpp)
+#---YAML---#
+
 include_directories(lib)
 
 add_executable(DesktopServer
@@ -22,4 +26,5 @@ add_executable(DesktopServer
         SerialMonitor.cpp
         lib/dSocket/dSocket.cpp MotorPWM.cpp MotorPWM.h)
 target_link_libraries(DesktopServer
-        Threads::Threads)
+        Threads::Threads
+        ${YAML_CPP_LIBRARIES})

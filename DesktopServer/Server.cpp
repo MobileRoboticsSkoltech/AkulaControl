@@ -15,8 +15,13 @@
 Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPacketSize(tPacketSize), mTimeoutMs(tConnTimeout) {
     mMessengerSTM = new SerialMessenger;
 
+    YAML::Node Config = YAML::LoadFile("config/control.yaml");
+    auto SerialPath = Config["serial"].as <std::string>();
+
+    ///---TODO: Add reconnection if serial port is no longer available---///
     try {
-        mMonitorSTM = new SerialMonitor("/dev/ttyACM1", 32, mMessengerSTM);
+
+        mMonitorSTM = new SerialMonitor(SerialPath, 32, mMessengerSTM);
     } catch (const std::runtime_error& tExcept) {
         delete(mMessengerSTM);
         throw;

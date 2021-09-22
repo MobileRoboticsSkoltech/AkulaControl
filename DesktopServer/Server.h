@@ -11,6 +11,8 @@
 #include <cstring>
 #include <queue>
 //-----------------------------//
+#include <yaml-cpp/yaml.h>
+//-----------------------------//
 #include "dSocket/dSocket.h"
 #include "SerialMonitor.h"
 #include "MotorPWM.h"

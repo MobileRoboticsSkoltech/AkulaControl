@@ -1,11 +1,12 @@
-#include <cstdio>
-//-----------------------------//
 #include <cmath>
 //-----------------------------//
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
 #include <sensor_msgs/msg/time_reference.hpp>
+#include <ament_index_cpp/get_package_share_directory.hpp>
+//-----------------------------//
+#include <yaml-cpp/yaml.h>
 //-----------------------------//
 #include "AkulaPackage/SerialConnector.h"
 //-----------------------------//
@@ -18,7 +19,11 @@ public:
         mPubTemp = create_publisher <sensor_msgs::msg::Temperature>("mcu_imu_temp", 1000);
         mPubCameraTS = create_publisher <sensor_msgs::msg::TimeReference>("mcu_cameras_ts", 1000);
 
-        mConnector = new SerialConnector("/dev/ttyACM2", B115200, 1000, PacketSize);
+        std::string PackagePath = ament_index_cpp::get_package_share_directory("AkulaPackage");
+        YAML::Node Config = YAML::LoadFile(PackagePath + "/config/imu.yaml");
+        std::string SerialPath = Config["serial"].as <std::string>();
+
+        mConnector = new SerialConnector(SerialPath, B115200, 1000, PacketSize);
     }
     ~AkulaMainNode() {
         if (mConnector) {

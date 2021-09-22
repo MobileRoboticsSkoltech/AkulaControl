@@ -15,14 +15,17 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
+#---ROS packages---#
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+#---ROS packages---#
+
+#---YAML---#
+find_package(yaml-cpp)
+#---YAML---#
 
 add_executable(AkulaMainNode
         src/AkulaMainNode.cpp
@@ -30,10 +33,13 @@ add_executable(AkulaMainNode
 target_include_directories(AkulaMainNode PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+target_link_libraries(AkulaMainNode
+        ${YAML_CPP_LIBRARIES})
 ament_target_dependencies(AkulaMainNode
         rclcpp
         std_msgs
-        sensor_msgs)
+        sensor_msgs
+        ament_index_cpp)
 
 install(TARGETS AkulaMainNode
   DESTINATION lib/${PROJECT_NAME})
@@ -49,13 +55,8 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-install(DIRECTORY
-  launch
-  DESTINATION lib/${PROJECT_NAME}/
-)
-install(DIRECTORY
-  model
-  DESTINATION lib/${PROJECT_NAME}/
+install(DIRECTORY launch model config
+        DESTINATION share/${PROJECT_NAME}/
 )
 
 ament_package()
