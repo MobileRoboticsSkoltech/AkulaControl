@@ -29,7 +29,7 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     //----------//
 
-    mMotorPWM = new MotorPWM(139, 100);
+    mMotorPWM = new MotorPWM(280-1, 100);
 
     //----------//
 

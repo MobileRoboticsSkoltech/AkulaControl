@@ -184,6 +184,9 @@ int main(void)
                             RightPWM = -MAX_PWM;
                         }
 
+                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 100);
+                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 100);
+
                         //----------//
 
                         Ratio = 100.0f / MAX_PWM;
@@ -194,7 +197,7 @@ int main(void)
                                 LeftMinus = 1;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM * Ratio + OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM);
                         }
 
                         if (LeftPWM > 0) {
@@ -203,7 +206,7 @@ int main(void)
                                 LeftMinus = 0;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, LeftPWM * Ratio + OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, LeftPWM);
                         }
 
                         if (RightPWM < 0) {
@@ -212,7 +215,7 @@ int main(void)
                                 RightMinus = 1;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, -RightPWM * Ratio + OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, -RightPWM);
                         }
 
                         if (RightPWM > 0) {
@@ -221,7 +224,7 @@ int main(void)
                                 RightMinus = 0;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, RightPWM * Ratio + OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, RightPWM);
                         }
 
                         //----------//
@@ -347,9 +350,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 4;
+  htim3.Init.Prescaler = 5-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 139;
+  htim3.Init.Period = 280-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -372,7 +375,7 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 139;
+  sConfigOC.Pulse = 280-1;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
