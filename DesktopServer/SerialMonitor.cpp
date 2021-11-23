@@ -5,6 +5,7 @@
 #include "SerialMonitor.h"
 //-----------------------------//
 SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize, SerialMessenger* tMessenger) {
+    ///---TODO: Move timeout value to the yaml config---///
     try {
         mConnector = new SerialConnector(tSerialPath, B115200, 2000, tPacketSize);
     } catch (const std::runtime_error& tExcept) {

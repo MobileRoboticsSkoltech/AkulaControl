@@ -19,8 +19,8 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
     auto SerialPath = Config["serial"].as <std::string>();
 
     ///---TODO: Add reconnection if serial port is no longer available---///
+    ///---TODO: Move packet size to the yaml config---///
     try {
-
         mMonitorSTM = new SerialMonitor(SerialPath, 32, mMessengerSTM);
     } catch (const std::runtime_error& tExcept) {
         delete(mMessengerSTM);
@@ -29,14 +29,43 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     //----------//
 
-    mMotorPWM = new MotorPWM(280-1, 100);
+    ///---TODO: Move this to the yaml config---///
+    mMotorPWM = new MotorPWM(280 - 1, 100);
 
     //----------//
 
-    ///---TODO: check the result values (fix dSocket beforehand)---///
+    dSocketResult SocketRes;
     mSocketUDP = new dSocket(true);
-    mSocketUDP -> init(dSocketProtocol::UDP);
-    mSocketUDP -> finalize(dSocketType::SERVER, tPort);
+
+    if ((SocketRes = mSocketUDP -> init(dSocketProtocol::UDP)) != dSocketResult::SUCCESS) {
+        switch (SocketRes) {
+            case dSocketResult::WRONG_PROTOCOL:
+                throw std::runtime_error("Server::Server: WRONG_PROTOCOL");
+            case dSocketResult::CREATE_FAILURE:
+                throw std::runtime_error("Server::Server: CREATE_FAILURE, " + mSocketUDP -> getLastError());
+            default:
+                throw std::runtime_error("Server::Server: this should have not occurred!");
+        }
+    }
+
+    if ((SocketRes = mSocketUDP -> finalize(dSocketType::SERVER, tPort)) != dSocketResult::SUCCESS) {
+        switch (SocketRes) {
+            case dSocketResult::WRONG_PROTOCOL:
+                throw std::runtime_error("Server::Server: WRONG_PROTOCOL");
+            case dSocketResult::NO_SOCKET_TYPE:
+                throw std::runtime_error("Server::Server: NO_SOCKET_TYPE");
+            case dSocketResult::BIND_FAILURE:
+                throw std::runtime_error("Server::Server: BIND_FAILURE, " + mSocketUDP -> getLastError());
+            case dSocketResult::LISTEN_FAILURE:
+                throw std::runtime_error("Server::Server: LISTEN_FAILURE, " + mSocketUDP -> getLastError());
+            case dSocketResult::ADDRESS_CONVERSION_FAILURE:
+                throw std::runtime_error("Server::Server: ADDRESS_CONVERSION_FAILURE, " + mSocketUDP -> getLastError());
+            default:
+                throw std::runtime_error("Server::Server: this should have not occurred!");
+        }
+    }
+
+    //----------//
 
     mSmartphoneReadBuffer       = new uint8_t[tPacketSize];
     mSmartphoneWriteBuffer      = new uint8_t[tPacketSize];
@@ -108,9 +137,7 @@ void Server::terminate() {
     mSmartphoneReadBufferCV.notify_all();
     mSmartphoneWriteBufferCV.notify_all();
 
-    if (mSocketUDP) {
-        delete(mSocketUDP);
-    }
+    delete(mSocketUDP);
 
     mSmartphoneReadCV.notify_one();
     mSmartphoneWriteCV.notify_one();
@@ -297,6 +324,8 @@ dSocketResult Server::smartphoneProcessCallback() {
                     std::cout << "Latency test from smartphone" << std::endl;
                     mMonitorSTM -> sendLatencyTest();
 
+                    break;
+                case SmartphoneHeader::DISCONNECTED:
                     break;
             }
 

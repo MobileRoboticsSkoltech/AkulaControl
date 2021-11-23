@@ -72,7 +72,6 @@ ssize_t SerialConnector::readSerial(uint8_t* tBuffer) const {
     ssize_t BytesTotalRead = 0;
     ssize_t BytesRead;
     int Available;
-    ///---TODO: make use of Available variable, add waiting if the number of bytes is less than packet size---///
 
     while (BytesTotalRead < mPacketSize) {
         if (checkNewData()) {
@@ -112,9 +111,9 @@ ssize_t SerialConnector::writeSerial(const uint8_t* tBuffer) const {
  * @description
  * Checks whether there are bytes available in the read buffer and waits for some specified time before
  * printing timeout
- * @return Returns <b>false</b> in case of timeout or error, <b>true</b> otherwise
+ * @return Returns 0 in case of timeout, -1 in case of error, 1 otherwise
  */
-bool SerialConnector::checkNewData() const {
+int8_t SerialConnector::checkNewData() const {
     fd_set ReadFDs;
     int Count;
     timespec Timeout {
@@ -128,20 +127,14 @@ bool SerialConnector::checkNewData() const {
     Count = pselect(mSerialPort + 1, &ReadFDs, nullptr, nullptr, &Timeout, nullptr);
 
     if (Count > 0) {
-        return true;
+        return 1;
     } else {
-        switch (Count) {
-            case 0:
-                std::cerr << "checkNewData: timeout" << std::endl;
-                return false;
-            case -1:
-                ///---TODO: return some kind of error---///
-                std::cerr << "checkNewData: pselect error -1" << std::endl;
-                return false;
-            default:
-                ///---TODO: return some kind of error---///
-                std::cerr << "checkNewData: pselect error " << Count << std::endl;
-                return false;
+        if (Count == 0) {
+            std::cerr << "checkNewData: timeout" << std::endl;
+            return 0;
+        } else {
+            std::cerr << "checkNewData: pselect error " << Count << std::endl;
+            return -1;
         }
     }
 }
