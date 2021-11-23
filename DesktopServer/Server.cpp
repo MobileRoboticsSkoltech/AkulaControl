@@ -36,7 +36,6 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
     ///---TODO: check the result values (fix dSocket beforehand)---///
     mSocketUDP = new dSocket(true);
     mSocketUDP -> init(dSocketProtocol::UDP);
-    mSocketUDP -> setTimeoutOption(1000);
     mSocketUDP -> finalize(dSocketType::SERVER, tPort);
 
     mSmartphoneReadBuffer       = new uint8_t[tPacketSize];
@@ -141,8 +140,8 @@ dSocketResult Server::smartphoneReadCallback() {
 
     while (!mTerminate.load()) {
         while (ReadTotal < mPacketSize && !mTerminate.load()) {
-            Result = mSocketUDP -> readFromAddress(Packet + ReadTotal, mPacketSize - ReadTotal, &ReadBytes,
-                                                   reinterpret_cast <sockaddr*>(&ClientAddr), &ClientAddrLen);
+            Result = mSocketUDP -> readUDP(Packet + ReadTotal, mPacketSize - ReadTotal, &ReadBytes,
+                                           reinterpret_cast <sockaddr*>(&ClientAddr), &ClientAddrLen);
 
             switch (Result) {
                 case dSocketResult::SUCCESS:
@@ -205,9 +204,9 @@ dSocketResult Server::smartphoneWriteCallback() {
 
         if (mConnected.load()) {
             while (WrittenTotal < mPacketSize) {
-                Result = mSocketUDP -> writeToAddress(Packet + WrittenTotal, mPacketSize - WrittenTotal, &WrittenBytes,
-                                                      reinterpret_cast <const sockaddr*>(&mSmartphoneAddr),
-                                                      mSmartphoneAddrLen);
+                Result = mSocketUDP -> writeUDP(Packet + WrittenTotal, mPacketSize - WrittenTotal, &WrittenBytes,
+                                                reinterpret_cast <const sockaddr*>(&mSmartphoneAddr),
+                                                mSmartphoneAddrLen);
 
                 switch (Result) {
                     case dSocketResult::SUCCESS:
