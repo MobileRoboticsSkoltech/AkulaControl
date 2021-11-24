@@ -13,19 +13,11 @@
  * @param tConnTimeout Time in milliseconds without ping from smartphone before disconnection
  */
 Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPacketSize(tPacketSize), mTimeoutMs(tConnTimeout) {
-    mMessengerSTM = new SerialMessenger;
-
     YAML::Node Config = YAML::LoadFile("config/control.yaml");
-    auto SerialPath = Config["serial"].as <std::string>();
+    mSerialPath = Config["serial"].as <std::string>();
 
     ///---TODO: Add reconnection if serial port is no longer available---///
     ///---TODO: Move packet size to the yaml config---///
-    try {
-        mMonitorSTM = new SerialMonitor(SerialPath, 32, mMessengerSTM);
-    } catch (const std::runtime_error& tExcept) {
-        delete(mMessengerSTM);
-        throw;
-    }
 
     //----------//
 
@@ -78,7 +70,6 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     mTimerThread                = std::async(std::launch::async, &Server::timerCallback, this);
     mSerialThread               = std::async(std::launch::async, &Server::serialCallback, this);
-    mSerialDataThread           = std::async(std::launch::async, &Server::serialDataCallback, this);
 }
 Server::~Server() {
     dSocketResult SocketRes;
@@ -114,13 +105,6 @@ Server::~Server() {
         mSerialThread.wait();
     }
 
-    if (mSerialDataThread.valid()) {
-        mSerialDataThread.wait();
-    }
-
-    delete(mMonitorSTM);
-    delete(mMessengerSTM);
-
     delete[](mSmartphoneReadBuffer);
     delete[](mSmartphoneWriteBuffer);
 }
@@ -142,8 +126,6 @@ void Server::terminate() {
     mSmartphoneReadCV.notify_one();
     mSmartphoneWriteCV.notify_one();
     mSmartphoneProcessCV.notify_one();
-
-    mMessengerSTM -> mDataCV.notify_one();
 
     mMonitorSTM -> terminate();
 }
@@ -465,7 +447,6 @@ ServerResult Server::timerCallback() {
     uint8_t Packet[mPacketSize];
     SmartphoneHeader Tag = SmartphoneHeader::PING;
     std::chrono::duration <double> Dur {};
-    int Counter = 0;
 
     memcpy(Packet, &Tag, 4);
 
@@ -479,13 +460,10 @@ ServerResult Server::timerCallback() {
                 mSmartphoneAddr     = {};
                 mSmartphoneAddrLen  = 0;
 
-                if (mMonitorSTM -> isConnected()) {
+                if (mMonitorSTM != nullptr && mMonitorSTM -> isConnected()) {
                     mMonitorSTM -> sendStop();
                 }
             }
-
-//            std::cout << Counter << std::endl;
-            Counter++;
 
             if (!fillSmartphoneWriteBuffer(Packet)) {
                 break;
@@ -502,21 +480,79 @@ ServerResult Server::timerCallback() {
  * Function calls serial main loop therefore should be called in a separate thread
  */
 void Server::serialCallback() {
-    ///---TODO: add proper termination---///
-    if (mMonitorSTM && !mTerminate.load()) {
-        mMonitorSTM -> startSerialLoop();
+    while (!mTerminate.load()) {
+        mMessengerSTM       = new SerialMessenger;
+        mMonitorSTM         = new SerialMonitor(mSerialPath, 32, mMessengerSTM);
+
+        std::future <void> SerialDataThread;
+
+        try {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+            {
+                std::scoped_lock <std::mutex> Lock(mMessengerSTM -> mMutex);
+                mSerialActive.store(true);
+            }
+
+            SerialDataThread = std::async(std::launch::async, &Server::serialDataCallback, this);
+            mMonitorSTM -> startSerialLoop();
+
+            //----------//
+
+            {
+                std::scoped_lock <std::mutex> Lock(mMessengerSTM -> mMutex);
+                mSerialActive.store(false);
+            }
+
+            mMessengerSTM -> mDataCV.notify_one();
+
+            if (SerialDataThread.valid()) {
+                SerialDataThread.wait();
+            }
+
+            delete(mMessengerSTM);
+            delete(mMonitorSTM);
+        } catch (const std::runtime_error& tExcept) {
+            std::cerr << tExcept.what() << std::endl;
+
+            {
+                std::scoped_lock <std::mutex> Lock(mMessengerSTM -> mMutex);
+                mSerialActive.store(false);
+            }
+
+            mMessengerSTM -> mDataCV.notify_one();
+
+            if (SerialDataThread.valid()) {
+                SerialDataThread.wait();
+            }
+
+            delete(mMessengerSTM);
+            delete(mMonitorSTM);
+        }
     }
 }
 
 ///---TODO: reading data without connection can create vulnerability - fix it---///
 void Server::serialDataCallback() {
+    if (mMessengerSTM == nullptr) {
+        return;
+    }
+
     std::unique_lock <std::mutex> Lock(mMessengerSTM -> mMutex);
     auto StmTag = SerialMonitor::PacketType::INVALID;
     auto SmartphoneTag = SmartphoneHeader::INVALID;
     uint8_t Packet[mPacketSize];
 
-    while (!mTerminate.load()) {
-        mMessengerSTM -> mDataCV.wait(Lock, [this]{ return mMessengerSTM -> mNewData.load(); });
+    while (!mTerminate.load() && mSerialActive.load()) {
+        mMessengerSTM -> mDataCV.wait(Lock, [this] {
+
+            return mMessengerSTM -> mNewData.load() || mTerminate.load() || !mSerialActive.load();
+        });
+
+        if (!mSerialActive.load() || mTerminate.load()) {
+            break;
+        }
+
         memcpy(&StmTag, mMessengerSTM -> mBuffer, 4);
 
         if (StmTag == SerialMonitor::PacketType::LATENCY) {

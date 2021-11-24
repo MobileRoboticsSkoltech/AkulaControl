@@ -25,6 +25,7 @@ SerialConnector::SerialConnector(const std::string& tSerialPath, uint16_t tSpeed
     //----------//
 
     if (tcgetattr(mSerialPort, &mTTY) != 0) {
+        close(mSerialPort);
         std::cerr << "Failed to get attributes: " << errno << "(" + std::string(strerror(errno)) + ")" << std::endl;
         throw std::runtime_error("SerialConnector::constructor");
     }
@@ -54,6 +55,7 @@ SerialConnector::SerialConnector(const std::string& tSerialPath, uint16_t tSpeed
     cfsetospeed(&mTTY, tSpeed);
 
     if (tcsetattr(mSerialPort, TCSANOW, &mTTY) != 0) {
+        close(mSerialPort);
         std::cerr << "Failed to set attributes: " << errno << "(" + std::string(strerror(errno)) + ")" << std::endl;
         throw std::runtime_error("SerialConnector::constructor");
     }

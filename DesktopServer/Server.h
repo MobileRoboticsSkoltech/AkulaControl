@@ -47,6 +47,7 @@ public:
 private:
     std::atomic_bool                            mTerminate                              = false;
     std::atomic_bool                            mConnected                              = false;
+    std::atomic_bool                            mSerialActive                           = false;
 
     std::chrono::system_clock::time_point       mSmartphoneLastPingTime                 = std::chrono::system_clock::now();
     uint32_t                                    mTimeoutMs                              = 0;
@@ -102,6 +103,7 @@ private:
 
     //----------//
 
+    std::string                                 mSerialPath;
     std::future <ServerResult>                  mTimerThread;
     std::future <void>                          mSerialThread;
     std::future <void>                          mSerialDataThread;

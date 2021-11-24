@@ -70,6 +70,7 @@ private:
     uint8_t*                                    mWriteBuffer                = nullptr;
 
     size_t                                      mPacketSize                 = 0;
+    std::string                                 mSerialPath;
 
     std::atomic_bool                            mRunning                    = false;
     std::atomic_bool                            mConnected                  = false;
