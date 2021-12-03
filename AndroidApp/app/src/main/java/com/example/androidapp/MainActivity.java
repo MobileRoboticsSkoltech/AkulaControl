@@ -8,7 +8,6 @@ import androidx.lifecycle.OnLifecycleEvent;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.text.InputFilter;
@@ -132,7 +131,12 @@ public class MainActivity extends AppCompatActivity {
         IpLine.setFilters(new InputFilter[] {IpFilter});
         PortLine.setFilters(new InputFilter[] {PortFilter});
 
-        mTestHandler.setLED(findViewById(R.id.connIndicator));
+        ConnIndicator StmIndicator = findViewById(R.id.stm32Indicator);
+        StmIndicator.setEnableColor(200, 200, 0);
+        StmIndicator.setDisableColor(100, 100, 0);
+        StmIndicator.setBackgroundColor(50, 50, 0);
+
+        mTestHandler.setLED(findViewById(R.id.serverIndicator));
         mTestHandler.setLatencyText(findViewById(R.id.textView2));
 
         RequestButton.setOnClickListener(tView -> {

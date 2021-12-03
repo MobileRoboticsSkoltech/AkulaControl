@@ -7,23 +7,109 @@
     android:background="@color/black"
     tools:context=".MainActivity">
 
-    <RelativeLayout
-        android:id="@+id/relativeLayout"
-        android:layout_width="50dp"
-        android:layout_height="0dp"
+    <LinearLayout
+        android:id="@+id/indicatorLayout"
+        android:layout_width="110dp"
+        android:layout_height="70dp"
         android:layout_marginTop="60dp"
         android:layout_marginEnd="10dp"
-        app:layout_constraintDimensionRatio="1:1"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.example.androidapp.ConnIndicator
-            android:id="@+id/connIndicator"
+        <LinearLayout
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <com.example.androidapp.ConnIndicator
+                android:id="@+id/serverIndicator"
+                android:layout_width="50dp"
+                android:layout_height="50dp" />
+
+            <TextView
+                android:id="@+id/serverText"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Server"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:orientation="vertical">
+
+            <com.example.androidapp.ConnIndicator
+                android:id="@+id/stm32Indicator"
+                android:layout_width="50dp"
+                android:layout_height="50dp" />
+
+            <TextView
+                android:id="@+id/stm32Text"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="STM32"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_height="wrap_content"
+        android:layout_width="110dp"
+        android:layout_marginTop="60dp"
+        android:layout_marginStart="10dp"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/leftEncoderText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            tools:layout_editor_absoluteX="-55dp"
-            tools:layout_editor_absoluteY="-140dp" />
-    </RelativeLayout>
+            android:layout_gravity="left"
+            android:text="Left: 0.0"
+            android:textColor="#FFFFFF"/>
+
+        <TextView
+            android:id="@+id/rightEncoderText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left"
+            android:text="Right: 0.0"
+            android:textColor="#FFFFFF"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="110dp"
+        android:layout_height="70dp"
+        android:layout_marginEnd="10dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/indicatorLayout">
+
+        <Button
+            android:id="@+id/latbutton"
+            app:backgroundTint="@color/blue"
+            android:textColor="@color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="Latency" />
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="0.0"
+            android:textColor="#FFFFFF"/>
+    </LinearLayout>
 
     <RelativeLayout
         android:id="@+id/relativeLayout2"
@@ -39,22 +125,6 @@
             android:id="@+id/joystick"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:text="TextView"
-            android:textColor="#FFFFFF"/>
-
-        <Button
-            android:id="@+id/latbutton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentBottom="true"
-            android:text="Latency" />
     </RelativeLayout>
 
     <com.example.androidapp.SlidePanel
@@ -69,11 +139,12 @@
             style="@style/Widget.AppCompat.Button"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:background="@drawable/open_menu_button"
+            android:background="@color/blue"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             app:backgroundTint="@null"
             app:icon="@android:drawable/arrow_down_float"
+            app:iconTint="@color/white"
             app:iconGravity="textStart"
             app:iconPadding="0dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -112,13 +183,15 @@
 
             <Button
                 android:id="@+id/requestButton"
+                app:backgroundTint="@color/dark_blue"
+                android:textColor="@color/white"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                android:background="@drawable/request_button"
-                android:text="Request"
-                app:backgroundTint="@null" />
+                android:text="Request" />
         </LinearLayout>
+
+
 
     </com.example.androidapp.SlidePanel>
 
