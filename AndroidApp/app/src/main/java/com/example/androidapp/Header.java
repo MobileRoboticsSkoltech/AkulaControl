@@ -8,7 +8,8 @@ public enum Header {
     INVALID(4),
     DISCONNECTED(5),
     LATENCY(6),
-    LATENCY_RESPONSE(7);
+    LATENCY_RESPONSE(7),
+    ENCODER(8);
 
     private final int mValue;
 
@@ -33,6 +34,8 @@ public enum Header {
             return LATENCY;
         } else if (tValue == 7) {
             return LATENCY_RESPONSE;
+        } else if (tValue == 8) {
+            return ENCODER;
         } else {
             return null;
         }

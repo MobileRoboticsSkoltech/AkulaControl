@@ -55,6 +55,17 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("Printed latency");
 
                     break;
+                case ENCODER:
+                    Bundle EncoderBund = tMsg.getData();
+                    double LeftEncoder = EncoderBund.getDouble("LeftEncoder");
+                    double RightEncoder = EncoderBund.getDouble("RightEncoder");
+
+                    LeftEncoderText.get().setText(String.valueOf(LeftEncoder));
+                    RightEncoderText.get().setText(String.valueOf(RightEncoder));
+
+                    System.out.println("Printed encoders");
+
+                    break;
             }
         }
 
@@ -65,11 +76,21 @@ public class MainActivity extends AppCompatActivity {
             LatencyText = new WeakReference <>(tView);
         }
 
+        void setLeftEncoderText(TextView tView) {
+            LeftEncoderText = new WeakReference <>(tView);
+        }
+        void setRightEncoderText(TextView tView) {
+            RightEncoderText = new WeakReference <>(tView);
+        }
+
         //----------//
 
         private boolean mStateLED = false;
         private WeakReference <ConnIndicator> mLED;
         private WeakReference <TextView> LatencyText;
+
+        private WeakReference <TextView> LeftEncoderText;
+        private WeakReference <TextView> RightEncoderText;
     }
 
     //----------//
@@ -138,6 +159,9 @@ public class MainActivity extends AppCompatActivity {
 
         mTestHandler.setLED(findViewById(R.id.serverIndicator));
         mTestHandler.setLatencyText(findViewById(R.id.textView2));
+
+        mTestHandler.setLeftEncoderText(findViewById(R.id.leftEncoder));
+        mTestHandler.setRightEncoderText(findViewById(R.id.rightEncoder));
 
         RequestButton.setOnClickListener(tView -> {
             IpLine.clearFocus();

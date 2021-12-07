@@ -82,6 +82,12 @@ class NetworkThread extends HandlerThread {
                         mHandlerUI.sendMessage(Msg);
 
                         break;
+                    case ENCODER:
+                        System.out.println("Sending encoder data to UI...");
+                        Msg.copyFrom(tMsg);
+                        mHandlerUI.sendMessage(Msg);
+
+                        break;
                 }
             }
         };

@@ -288,6 +288,22 @@ public class Client {
                         mHandler.sendMessage(Msg);
 
                         break;
+                    case ENCODER:
+                        Bundle EncoderBund = new Bundle(2);
+
+                        long LongBits = Double.doubleToLongBits(Buffer.getDouble());
+                        LongBits = Long.reverseBytes(LongBits);
+                        EncoderBund.putDouble("LeftEncoder", Double.longBitsToDouble(LongBits));
+
+                        LongBits = Double.doubleToLongBits(Buffer.getDouble());
+                        LongBits = Long.reverseBytes(LongBits);
+                        EncoderBund.putDouble("RightEncoder", Double.longBitsToDouble(LongBits));
+
+                        Msg.setData(EncoderBund);
+                        Msg.what = Header.ENCODER.getValue();
+                        mHandler.sendMessage(Msg);
+
+                        break;
                     case STATUS:
                         break;
                     case INVALID:
