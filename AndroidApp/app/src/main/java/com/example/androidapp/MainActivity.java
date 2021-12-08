@@ -36,15 +36,31 @@ public class MainActivity extends AppCompatActivity {
 
             switch (Header.fromInt(tMsg.what)) {
                 case PING:
-                    if (!mStateLED) {
-                        mLED.get().setConnectionState(true);
-                        mStateLED = true;
+                    if (!mStateServerLED) {
+                        mServerLED.get().setConnectionState(true);
+                        mStateServerLED = true;
                     }
 
                     break;
                 case DISCONNECTED:
-                    mLED.get().setConnectionState(false);
-                    mStateLED = false;
+                    if (mStateServerLED) {
+                        mServerLED.get().setConnectionState(false);
+                        mStateServerLED = false;
+                    }
+
+                    break;
+                case STM32_ONLINE:
+                    if (!mStateStm32LED) {
+                        mStm32LED.get().setConnectionState(true);
+                        mStateStm32LED = true;
+                    }
+
+                    break;
+                case STM32_DISCONNECTED:
+                    if (mStateStm32LED) {
+                        mStm32LED.get().setConnectionState(false);
+                        mStateStm32LED = false;
+                    }
 
                     break;
                 case LATENCY_RESPONSE:
@@ -70,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         void setLED(ConnIndicator tLED) {
-            mLED = new WeakReference <>(tLED);
+            mServerLED = new WeakReference <>(tLED);
         }
         void setLatencyText(TextView tView) {
             LatencyText = new WeakReference <>(tView);
@@ -85,8 +101,12 @@ public class MainActivity extends AppCompatActivity {
 
         //----------//
 
-        private boolean mStateLED = false;
-        private WeakReference <ConnIndicator> mLED;
+        private boolean mStateServerLED = false;
+        private WeakReference <ConnIndicator> mServerLED;
+
+        private boolean mStateStm32LED = false;
+        private WeakReference <ConnIndicator> mStm32LED;
+
         private WeakReference <TextView> LatencyText;
 
         private WeakReference <TextView> LeftEncoderText;

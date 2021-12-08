@@ -43,6 +43,19 @@ class NetworkThread extends HandlerThread {
                         Msg.what = Header.PING.getValue();
                         mHandlerUI.sendMessage(Msg);
 
+                        Bundle PingBund = tMsg.getData();
+                        byte Stm32State = PingBund.getByte("stm32");
+
+                        Message StmMsg = mHandler.obtainMessage();
+
+                        if (Stm32State == 0) {
+                            StmMsg.what = Header.STM32_ONLINE.getValue();
+                        } else {
+                            StmMsg.what = Header.STM32_DISCONNECTED.getValue();
+                        }
+
+                        mHandlerUI.sendMessage(StmMsg);
+
                         break;
                     case DISCONNECTED:
                         mConnected = false;

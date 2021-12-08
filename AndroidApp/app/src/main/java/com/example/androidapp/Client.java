@@ -260,6 +260,8 @@ public class Client {
                             }
                         }
 
+                        byte Stm32State = (byte)Buffer.getChar();
+
                         byte[] PingPacket = new byte[mPacketSize];
 
                         Header PingTag = Header.PING;
@@ -274,6 +276,9 @@ public class Client {
                             return;
                         }
 
+                        Bundle PingBund = new Bundle(1);
+                        PingBund.putByte("stm32", Stm32State);
+                        Msg.setData(PingBund);
                         Msg.what = Header.PING.getValue();
                         mHandler.sendMessage(Msg);
 
