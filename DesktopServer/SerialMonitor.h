@@ -13,7 +13,7 @@ struct SerialMessenger {
     std::condition_variable     mDataCV;
     std::atomic_bool            mNewData        = false;
     std::mutex                  mMutex;
-    uint32_t                    mBuffer[32];
+    uint8_t*                    mBuffer         = nullptr;
 };
 //-----------------------------//
 ///---TODO: maybe it's better to clear read buffer before processing packet---///

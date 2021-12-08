@@ -158,6 +158,21 @@ int main(void)
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
                         } while (SendResult == USBD_BUSY);
 
+                        //---Temp---//
+
+                        double EncoderValue = 6.66;
+
+                        WriteTag = ENCODER;
+                        memcpy(WriteBuffer, &WriteTag, 4);
+                        memcpy(WriteBuffer + 4, &EncoderValue, 8);
+                        memcpy(WriteBuffer + 12, &EncoderValue, 8);
+
+                        do {
+                            SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                        } while (SendResult == USBD_BUSY);
+
+                        //---Temp---//
+
                         WriteTag = INVALID;
 
                         break;

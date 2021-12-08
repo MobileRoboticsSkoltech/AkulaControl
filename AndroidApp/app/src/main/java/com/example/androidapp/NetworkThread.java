@@ -49,9 +49,9 @@ class NetworkThread extends HandlerThread {
                         Message StmMsg = mHandler.obtainMessage();
 
                         if (Stm32State == 0) {
-                            StmMsg.what = Header.STM32_ONLINE.getValue();
-                        } else {
                             StmMsg.what = Header.STM32_DISCONNECTED.getValue();
+                        } else {
+                            StmMsg.what = Header.STM32_ONLINE.getValue();
                         }
 
                         mHandlerUI.sendMessage(StmMsg);

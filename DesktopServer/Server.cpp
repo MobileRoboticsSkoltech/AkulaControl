@@ -465,6 +465,9 @@ ServerResult Server::timerCallback() {
                 }
             }
 
+            uint8_t ActiveSTM = mSerialActive.load();
+            memcpy(Packet + 4, &ActiveSTM, 1);
+
             if (!fillSmartphoneWriteBuffer(Packet)) {
                 break;
             }
@@ -482,6 +485,7 @@ ServerResult Server::timerCallback() {
 void Server::serialCallback() {
     while (!mTerminate.load()) {
         mMessengerSTM       = new SerialMessenger;
+        mMessengerSTM -> mBuffer = new uint8_t[32];
         mMonitorSTM         = new SerialMonitor(mSerialPath, 32, mMessengerSTM);
 
         std::future <void> SerialDataThread;
@@ -510,6 +514,7 @@ void Server::serialCallback() {
                 SerialDataThread.wait();
             }
 
+            delete[](mMessengerSTM -> mBuffer);
             delete(mMessengerSTM);
             delete(mMonitorSTM);
         } catch (const std::runtime_error& tExcept) {
@@ -545,7 +550,6 @@ void Server::serialDataCallback() {
 
     while (!mTerminate.load() && mSerialActive.load()) {
         mMessengerSTM -> mDataCV.wait(Lock, [this] {
-
             return mMessengerSTM -> mNewData.load() || mTerminate.load() || !mSerialActive.load();
         });
 
@@ -560,8 +564,14 @@ void Server::serialDataCallback() {
             memcpy(Packet, &SmartphoneTag, 4);
             fillSmartphoneWriteBuffer(Packet);
             std::cout << "Latency test from STM32" << std::endl;
-        }
+        } else if (StmTag == SerialMonitor::PacketType::ENCODER) {
+            SmartphoneTag = SmartphoneHeader::ENCODER;
+            memcpy(Packet, &SmartphoneTag, 4);
+            memcpy(Packet + 4, mMessengerSTM -> mBuffer + 4, 16);   //---Two double values for the left and the right encoders---//
 
+            fillSmartphoneWriteBuffer(Packet);
+            std::cout << "Encoder data from STM32" << std::endl;
+        }
 
         mMessengerSTM -> mNewData.store(false);
         StmTag = SerialMonitor::PacketType::INVALID;

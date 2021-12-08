@@ -48,6 +48,11 @@ public class MainActivity extends AppCompatActivity {
                         mStateServerLED = false;
                     }
 
+                    if (mStateStm32LED) {
+                        mStm32LED.get().setConnectionState(false);
+                        mStateStm32LED = false;
+                    }
+
                     break;
                 case STM32_ONLINE:
                     if (!mStateStm32LED) {
@@ -88,6 +93,10 @@ public class MainActivity extends AppCompatActivity {
         void setLED(ConnIndicator tLED) {
             mServerLED = new WeakReference <>(tLED);
         }
+        void setStmLED(ConnIndicator tLED) {
+            mStm32LED = new WeakReference <>(tLED);
+        }
+
         void setLatencyText(TextView tView) {
             LatencyText = new WeakReference <>(tView);
         }
@@ -178,6 +187,8 @@ public class MainActivity extends AppCompatActivity {
         StmIndicator.setBackgroundColor(50, 50, 0);
 
         mTestHandler.setLED(findViewById(R.id.serverIndicator));
+        mTestHandler.setStmLED(findViewById(R.id.stm32Indicator));
+
         mTestHandler.setLatencyText(findViewById(R.id.textView2));
 
         mTestHandler.setLeftEncoderText(findViewById(R.id.leftEncoder));

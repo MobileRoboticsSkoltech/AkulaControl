@@ -89,6 +89,7 @@ void SerialMonitor::startSerialLoop() {
                     case PacketType::JOYSTICK_COORDS:
                         std::cout << "Coord response!" << std::endl;
                         break;
+                    case PacketType::ENCODER:
                     case PacketType::LATENCY:
                         {
                             std::scoped_lock<std::mutex> Lock(mMessenger -> mMutex);

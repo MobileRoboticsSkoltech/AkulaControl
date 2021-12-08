@@ -249,9 +249,6 @@ public class Client {
                     case JOYSTICK_COORDS:
                         break;
                     case PING:
-                        System.out.println(Counter);
-                        Counter++;
-
                         if (!mConnected.get()) {
                             mConnected.set(true);
 
@@ -260,7 +257,7 @@ public class Client {
                             }
                         }
 
-                        byte Stm32State = (byte)Buffer.getChar();
+                        byte Stm32State = Buffer.get();
 
                         byte[] PingPacket = new byte[mPacketSize];
 
@@ -275,6 +272,8 @@ public class Client {
                         if (!fillWriteBuffer(PingPacket)) {
                             return;
                         }
+
+                        System.out.println(Stm32State);
 
                         Bundle PingBund = new Bundle(1);
                         PingBund.putByte("stm32", Stm32State);

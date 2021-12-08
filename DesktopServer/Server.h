@@ -24,7 +24,8 @@ enum class SmartphoneHeader {
     STATUS,
     INVALID,
     DISCONNECTED,
-    LATENCY
+    LATENCY,
+    ENCODER
 };
 enum class ServerResult {
     SUCCESS,
