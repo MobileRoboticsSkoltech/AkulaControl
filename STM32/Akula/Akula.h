@@ -7,11 +7,13 @@
 //-----------------------------//
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 //-----------------------------//
 #define RING_BUFFER_SIZE    128
 #define PACKET_SIZE			32
-#define MAX_PWM             280 - 1
-#define OFFSET_PWM          30
+#define MAX_PWM             (280 - 1)
+#define ENCODER_PRESCALER   (1000 - 1)
+#define ENCODER_FREQ        84000000
 //-----------------------------//
 typedef struct RingBuffer {
     uint32_t 	mHead;
@@ -44,6 +46,23 @@ extern int gConnected;
 extern int gRunning;
 
 extern uint32_t TimeoutMs;
+
+extern uint32_t gSignalDiffLeft;
+extern uint32_t gSignalDiffRight;
+
+extern bool gFirstCapturedLeft;
+extern bool gFirstCapturedRight;
+
+extern uint32_t gFirstValLeft;
+extern uint32_t gFirstValRight;
+
+extern uint32_t gSecondValLeft;
+extern uint32_t gSecondValRight;
+
+extern double gFrequencyLeft;
+extern double gFrequencyRight;
+
+extern uint32_t gSendEncoderCounter;
 //-----------------------------//
 uint32_t ringNextIndex(uint32_t tCurrentIndex);
 uint32_t readSerial(uint8_t* tBuffer, uint32_t tLength);
