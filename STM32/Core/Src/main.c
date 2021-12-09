@@ -106,7 +106,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 
     gSendEncoderCounter++;
 
-    if (gSendEncoderCounter % 10 == 0) {
+    if (gSendEncoderCounter % 100 == 0) {
         uint32_t WriteTag = ENCODER;
         uint8_t SendResult;
 
@@ -217,7 +217,6 @@ int main(void)
         } else {
             if (readSerial(ReadBuffer, PACKET_SIZE)) {
                 memcpy(&ReadTag, ReadBuffer, 4);
-                float Ratio;
 
                 switch (ReadTag) {
                     case PING:
@@ -230,6 +229,8 @@ int main(void)
                         } while (SendResult == USBD_BUSY);
 
                         WriteTag = INVALID;
+
+                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM);
 
                         break;
                     case JOYSTICK_COORDS:
@@ -255,12 +256,7 @@ int main(void)
                             RightPWM = -MAX_PWM;
                         }
 
-                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 100);
-                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 100);
-
                         //----------//
-
-                        Ratio = 100.0f / MAX_PWM;
 
                         if (LeftPWM < 0) {
                             if (LeftMinus == 0) {
