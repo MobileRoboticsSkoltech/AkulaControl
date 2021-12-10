@@ -167,8 +167,11 @@ int main(void)
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
 
-    HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
-    HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);
+//    HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
+//    HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);
+
+    HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+    HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
 
     uint32_t WriteTag           = INVALID;
     uint32_t ReadTag            = INVALID;
@@ -181,6 +184,7 @@ int main(void)
 
     uint32_t CurrentTime;
     uint8_t SendResult;
+    uint32_t EncoderSendCounter = 0;
 
   /* USER CODE END 2 */
 
@@ -226,11 +230,9 @@ int main(void)
 
                         do {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-                        } while (SendResult == USBD_BUSY);
+                        } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
 
                         WriteTag = INVALID;
-
-                        __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM);
 
                         break;
                     case JOYSTICK_COORDS:
@@ -308,7 +310,7 @@ int main(void)
 
                         do {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-                        } while (SendResult == USBD_BUSY);
+                        } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
 
                         WriteTag = INVALID;
 
@@ -319,7 +321,7 @@ int main(void)
 
                         do {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-                        } while (SendResult == USBD_BUSY);
+                        } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
 
                         WriteTag = INVALID;
 
@@ -346,6 +348,24 @@ int main(void)
 
                 continue;
             }
+
+            uint32_t WriteTag = ENCODER;
+            uint8_t SendResult;
+
+            gFrequencyLeft = ((TIM2->CNT)>>2);
+            gFrequencyRight = ((TIM5->CNT)>>2);
+
+            memcpy(WriteBuffer, &WriteTag, 4);
+            memcpy(WriteBuffer + 4, &gFrequencyLeft, 8);
+            memcpy(WriteBuffer + 12, &gFrequencyRight, 8);
+
+            if (EncoderSendCounter % 100 == 0) {
+                do {
+                    SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
+            }
+
+            EncoderSendCounter++;
         }
     /* USER CODE END WHILE */
 
@@ -409,9 +429,8 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 0 */
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_Encoder_InitTypeDef sConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_IC_InitTypeDef sConfigIC = {0};
 
   /* USER CODE BEGIN TIM2_Init 1 */
 
@@ -419,33 +438,25 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 1000-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4294967295;
+  htim2.Init.Period = 65535;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_IC_Init(&htim2) != HAL_OK)
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
-  if (HAL_TIM_IC_ConfigChannel(&htim2, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }
@@ -530,9 +541,8 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 0 */
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_Encoder_InitTypeDef sConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
-  TIM_IC_InitTypeDef sConfigIC = {0};
 
   /* USER CODE BEGIN TIM5_Init 1 */
 
@@ -540,33 +550,25 @@ static void MX_TIM5_Init(void)
   htim5.Instance = TIM5;
   htim5.Init.Prescaler = 1000-1;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 4294967295;
+  htim5.Init.Period = 65535;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim5) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim5, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_TIM_IC_Init(&htim5) != HAL_OK)
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim5, &sConfig) != HAL_OK)
   {
     Error_Handler();
   }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sConfigIC.ICPolarity = TIM_INPUTCHANNELPOLARITY_RISING;
-  sConfigIC.ICSelection = TIM_ICSELECTION_DIRECTTI;
-  sConfigIC.ICPrescaler = TIM_ICPSC_DIV1;
-  sConfigIC.ICFilter = 0;
-  if (HAL_TIM_IC_ConfigChannel(&htim5, &sConfigIC, TIM_CHANNEL_1) != HAL_OK)
   {
     Error_Handler();
   }

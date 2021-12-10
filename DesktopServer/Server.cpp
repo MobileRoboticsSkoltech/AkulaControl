@@ -569,8 +569,14 @@ void Server::serialDataCallback() {
             memcpy(Packet, &SmartphoneTag, 4);
             memcpy(Packet + 4, mMessengerSTM -> mBuffer + 4, 16);   //---Two double values for the left and the right encoders---//
 
+            double Left;
+            double Right;
+
+            memcpy(&Left, mMessengerSTM -> mBuffer + 4, 8);
+            memcpy(&Right, mMessengerSTM -> mBuffer + 12, 8);
+
             fillSmartphoneWriteBuffer(Packet);
-            std::cout << "Encoder data from STM32" << std::endl;
+            std::cout << "Encoder data from STM32: " << Left << ", " << Right << std::endl;
         }
 
         mMessengerSTM -> mNewData.store(false);
