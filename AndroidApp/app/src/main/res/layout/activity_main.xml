@@ -8,6 +8,29 @@
     tools:context=".MainActivity">
 
     <LinearLayout
+        android:layout_width="50dp"
+        android:layout_marginTop="60dp"
+        android:layout_marginEnd="10dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toStartOf="@+id/indicatorLayout"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.example.androidapp.ConnIndicator
+            android:id="@+id/recordIndicator"
+            android:layout_width="50dp"
+            android:layout_height="50dp" />
+
+        <TextView
+            android:id="@+id/recordText"
+            android:layout_width="50dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Rec."
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/indicatorLayout"
         android:layout_width="110dp"
         android:layout_height="70dp"
@@ -111,6 +134,7 @@
     </TableLayout>
 
     <LinearLayout
+        android:id="@+id/linearLayout"
         android:layout_width="110dp"
         android:layout_height="70dp"
         android:layout_marginEnd="10dp"
@@ -120,12 +144,12 @@
 
         <Button
             android:id="@+id/latbutton"
-            app:backgroundTint="@color/blue"
-            android:textColor="@color/white"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
-            android:text="Latency" />
+            android:text="Latency"
+            android:textColor="@color/white"
+            app:backgroundTint="@color/blue" />
 
         <TextView
             android:id="@+id/textView2"
@@ -133,7 +157,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:text="0.0"
-            android:textColor="#FFFFFF"/>
+            android:textColor="#FFFFFF" />
     </LinearLayout>
 
     <RelativeLayout

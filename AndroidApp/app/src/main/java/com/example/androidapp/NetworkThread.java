@@ -45,6 +45,7 @@ class NetworkThread extends HandlerThread {
 
                         Bundle PingBund = tMsg.getData();
                         byte Stm32State = PingBund.getByte("stm32");
+                        byte RecordState = PingBund.getByte("record");
 
                         Message StmMsg = mHandler.obtainMessage();
 
@@ -55,6 +56,18 @@ class NetworkThread extends HandlerThread {
                         }
 
                         mHandlerUI.sendMessage(StmMsg);
+
+                        //----------//
+
+                        Message RecordMsg = mHandler.obtainMessage();
+
+                        if (RecordState == 0) {
+                            RecordMsg.what = Header.RECORD_INACTIVE.getValue();
+                        } else {
+                            RecordMsg.what = Header.RECORD_ACTIVE.getValue();
+                        }
+
+                        mHandlerUI.sendMessage(RecordMsg);
 
                         break;
                     case DISCONNECTED:

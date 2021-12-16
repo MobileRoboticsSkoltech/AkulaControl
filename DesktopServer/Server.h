@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <cstring>
 #include <queue>
+#include <algorithm>
 //-----------------------------//
 #include <yaml-cpp/yaml.h>
 //-----------------------------//
@@ -49,9 +50,13 @@ private:
     std::atomic_bool                            mTerminate                              = false;
     std::atomic_bool                            mConnected                              = false;
     std::atomic_bool                            mSerialActive                           = false;
+    std::atomic_bool                            mRecording                              = false;
 
+    ///---TODO: add timeout values to the YAML config---///
     std::chrono::system_clock::time_point       mSmartphoneLastPingTime                 = std::chrono::system_clock::now();
+    std::chrono::system_clock::time_point       mRecordLastCheckTime                    = std::chrono::system_clock::now();
     uint32_t                                    mTimeoutMs                              = 0;
+    uint32_t                                    mRecordCheckTimeoutMs                   = 1000;
 
     //----------//
 

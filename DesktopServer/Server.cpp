@@ -447,6 +447,8 @@ ServerResult Server::timerCallback() {
     uint8_t Packet[mPacketSize];
     SmartphoneHeader Tag = SmartphoneHeader::PING;
     std::chrono::duration <double> Dur {};
+    FILE* Stream;
+    char StreamData[128];
 
     memcpy(Packet, &Tag, 4);
 
@@ -466,12 +468,42 @@ ServerResult Server::timerCallback() {
             }
 
             uint8_t ActiveSTM = mSerialActive.load();
+            uint8_t ActiveRecording = mRecording.load();
+
             memcpy(Packet + 4, &ActiveSTM, 1);
+            memcpy(Packet + 5, &ActiveRecording, 1);
 
             if (!fillSmartphoneWriteBuffer(Packet)) {
                 break;
             }
         }
+
+        //----------//
+
+        ///---TODO: add bash command and status to the YAML config---///
+        Dur = std::chrono::system_clock::now() - mRecordLastCheckTime;
+
+        if (Dur.count() * 1000 > mRecordCheckTimeoutMs) {
+            Stream = popen("systemctl --user status akula_sensors.service | grep Active", "r");
+
+            if (Stream != nullptr && fgets(StreamData, 128, Stream) != nullptr) {
+                if (std::strstr(StreamData, "running")) {
+                    mRecording.store(true);
+                } else {
+                    mRecording.store(false);
+                }
+            } else {
+                mRecording.store(false);
+            }
+
+            if (pclose(Stream) == -1) {
+                std::cerr << "timerCallback: failed to close the stream!" << std::endl;
+            }
+
+            mRecordLastCheckTime = std::chrono::system_clock::now();
+        }
+
+        //----------//
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }

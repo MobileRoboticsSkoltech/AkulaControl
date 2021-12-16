@@ -258,6 +258,7 @@ public class Client {
                         }
 
                         byte Stm32State = Buffer.get();
+                        byte RecordState = Buffer.get();
 
                         byte[] PingPacket = new byte[mPacketSize];
 
@@ -275,8 +276,9 @@ public class Client {
 
                         System.out.println(Stm32State);
 
-                        Bundle PingBund = new Bundle(1);
+                        Bundle PingBund = new Bundle(2);
                         PingBund.putByte("stm32", Stm32State);
+                        PingBund.putByte("record", RecordState);
                         Msg.setData(PingBund);
                         Msg.what = Header.PING.getValue();
                         mHandler.sendMessage(Msg);

@@ -53,6 +53,11 @@ public class MainActivity extends AppCompatActivity {
                         mStateStm32LED = false;
                     }
 
+                    if (mStateRecordLED) {
+                        mRecordLED.get().setConnectionState(false);
+                        mStateRecordLED = false;
+                    }
+
                     break;
                 case STM32_ONLINE:
                     if (!mStateStm32LED) {
@@ -65,6 +70,20 @@ public class MainActivity extends AppCompatActivity {
                     if (mStateStm32LED) {
                         mStm32LED.get().setConnectionState(false);
                         mStateStm32LED = false;
+                    }
+
+                    break;
+                case RECORD_ACTIVE:
+                    if (!mStateRecordLED) {
+                        mRecordLED.get().setConnectionState(true);
+                        mStateRecordLED = true;
+                    }
+
+                    break;
+                case RECORD_INACTIVE:
+                    if (mStateRecordLED) {
+                        mRecordLED.get().setConnectionState(false);
+                        mStateRecordLED = false;
                     }
 
                     break;
@@ -96,6 +115,9 @@ public class MainActivity extends AppCompatActivity {
         void setStmLED(ConnIndicator tLED) {
             mStm32LED = new WeakReference <>(tLED);
         }
+        void setRecordLED(ConnIndicator tLED) {
+            mRecordLED = new WeakReference <>(tLED);
+        }
 
         void setLatencyText(TextView tView) {
             LatencyText = new WeakReference <>(tView);
@@ -115,6 +137,9 @@ public class MainActivity extends AppCompatActivity {
 
         private boolean mStateStm32LED = false;
         private WeakReference <ConnIndicator> mStm32LED;
+
+        private boolean mStateRecordLED = false;
+        private WeakReference <ConnIndicator> mRecordLED;
 
         private WeakReference <TextView> LatencyText;
 
@@ -186,8 +211,14 @@ public class MainActivity extends AppCompatActivity {
         StmIndicator.setDisableColor(100, 100, 0);
         StmIndicator.setBackgroundColor(50, 50, 0);
 
+        ConnIndicator RecordIndicator = findViewById(R.id.recordIndicator);
+        RecordIndicator.setEnableColor(200, 0, 0);
+        RecordIndicator.setDisableColor(100, 0, 0);
+        RecordIndicator.setBackgroundColor(50, 0, 0);
+
         mTestHandler.setLED(findViewById(R.id.serverIndicator));
-        mTestHandler.setStmLED(findViewById(R.id.stm32Indicator));
+        mTestHandler.setStmLED(StmIndicator);
+        mTestHandler.setRecordLED(RecordIndicator);
 
         mTestHandler.setLatencyText(findViewById(R.id.textView2));
 

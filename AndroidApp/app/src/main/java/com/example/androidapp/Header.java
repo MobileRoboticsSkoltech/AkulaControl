@@ -11,7 +11,9 @@ public enum Header {
     ENCODER(7),
     LATENCY_RESPONSE(8),
     STM32_ONLINE(9),
-    STM32_DISCONNECTED(10);
+    STM32_DISCONNECTED(10),
+    RECORD_ACTIVE(11),
+    RECORD_INACTIVE(12);
 
     private final int mValue;
 
@@ -42,6 +44,10 @@ public enum Header {
             return STM32_ONLINE;
         } else if (tValue == 10) {
             return STM32_DISCONNECTED;
+        } else if (tValue == 11) {
+            return RECORD_ACTIVE;
+        } else if (tValue == 12) {
+            return RECORD_INACTIVE;
         } else {
             return null;
         }
