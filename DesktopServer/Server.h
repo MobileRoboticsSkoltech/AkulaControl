@@ -44,7 +44,7 @@ enum class ServerResult {
  */
 class Server {
 public:
-    Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout);
+    Server();
     ~Server();
 private:
     std::atomic_bool                            mTerminate                              = false;
@@ -52,11 +52,17 @@ private:
     std::atomic_bool                            mSerialActive                           = false;
     std::atomic_bool                            mRecording                              = false;
 
-    ///---TODO: add timeout values to the YAML config---///
     std::chrono::system_clock::time_point       mSmartphoneLastPingTime                 = std::chrono::system_clock::now();
-    std::chrono::system_clock::time_point       mRecordLastCheckTime                    = std::chrono::system_clock::now();
     uint32_t                                    mTimeoutMs                              = 0;
-    uint32_t                                    mRecordCheckTimeoutMs                   = 1000;
+    uint32_t                                    mTimerSleepIntervalMs                   = 0;
+
+    //----------//
+
+    uint32_t                                    mRecordCheckTimeoutMs                   = 0;
+    std::chrono::system_clock::time_point       mRecordLastCheckTime                    = std::chrono::system_clock::now();
+    std::string                                 mRecordStatusCmd;
+    std::string                                 mRecordStartCmd;
+    std::string                                 mRecordStopCmd;
 
     //----------//
 
@@ -106,6 +112,10 @@ private:
 
     SerialMonitor*                              mMonitorSTM                             = nullptr;
     SerialMessenger*                            mMessengerSTM                           = nullptr;
+    size_t                                      mSerialPacketSize                       = 0;
+    uint32_t                                    mSerialTimeout                          = 0;
+    uint32_t                                    mSerialTimerSleepIntervalMs             = 0;
+    uint32_t                                    mSerialPingIntervalMs                   = 0;
 
     //----------//
 

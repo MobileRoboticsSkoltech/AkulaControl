@@ -1,1 +1,19 @@
-serial: "/dev/ttyControlSTM32"
+smartphone:
+  port: 50000
+  packet_size: 32
+  timeout_ms: 1000
+  timer_wakeup_cd_ms: 100
+serial: 
+  port: "/dev/ttyControlSTM32"
+  packet_size: 32
+  timeout_ms: 2000
+  timer_wakeup_cd_ms: 200
+  ping_cd_ms: 1000
+pwm:
+  max_pwm: 279
+  max_coord_radius: 100.0
+record_cmd:
+  status_check_cd_ms: 1000
+  status: "systemctl --user status akula_sensors.service | grep Active"
+  start: "systemctl --user start akula_sensors.service"
+  stop: "systemctl --user stop akula_sensors.service"

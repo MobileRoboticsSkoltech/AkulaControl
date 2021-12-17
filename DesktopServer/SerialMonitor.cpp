@@ -4,10 +4,18 @@
 //-----------------------------//
 #include "SerialMonitor.h"
 //-----------------------------//
-SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize, SerialMessenger* tMessenger) {
-    mPacketSize     = tPacketSize;
-    mSerialPath     = tSerialPath;
-    mMessenger      = tMessenger;
+SerialMonitor::SerialMonitor(const std::string& tSerialPath,
+                             size_t tPacketSize,
+                             SerialMessenger* tMessenger,
+                             uint32_t tSerialTimeoutMs,
+                             uint32_t tTimerSleepIntervalMs,
+                             uint32_t tPingIntervalMs) {
+    mPacketSize             = tPacketSize;
+    mSerialPath             = tSerialPath;
+    mMessenger              = tMessenger;
+    mSerialTimeout          = tSerialTimeoutMs;
+    mTimerSleepIntervalMs   = tTimerSleepIntervalMs;
+    mPingIntervalMs         = tPingIntervalMs;
 
     mReadBuffer     = new uint8_t[tPacketSize];
     mWriteBuffer    = new uint8_t[tPacketSize];
@@ -42,7 +50,7 @@ void SerialMonitor::startSerialLoop() {
     //----------//
 
     try {
-        mConnector = new SerialConnector(mSerialPath, B115200, 2000, mPacketSize);
+        mConnector = new SerialConnector(mSerialPath, B115200, mSerialTimeout, mPacketSize);
     } catch (const std::runtime_error &tExcept) {
         mRunning.store(false);
         throw std::runtime_error("Serial connector creation failed!");

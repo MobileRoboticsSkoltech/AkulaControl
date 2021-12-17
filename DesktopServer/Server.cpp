@@ -8,23 +8,38 @@
  * @description
  * Constructor initializes a socket for communication with android smartphone and serial monitor,
  * starts read, write, process, timer and serial main loop thread
- * @param tPort Port used for communicating with a smartphone
- * @param tPacketSize Number of bytes in the packets for smartphone
- * @param tConnTimeout Time in milliseconds without ping from smartphone before disconnection
  */
-Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPacketSize(tPacketSize), mTimeoutMs(tConnTimeout) {
-    YAML::Node Config = YAML::LoadFile("config/control.yaml");
-    mSerialPath = Config["serial"].as <std::string>();
-
-    ///---TODO: Add reconnection if serial port is no longer available---///
-    ///---TODO: Move packet size to the yaml config---///
+Server::Server() {
+    YAML::Node Config       = YAML::LoadFile("config/control.yaml");
 
     //----------//
 
-    ///---TODO: Move this to the yaml config---///
-    mMotorPWM = new MotorPWM(280 - 1, 100);
+    mSerialPath                     = Config["serial"]["port"].as <std::string>();
+    mSerialPacketSize               = Config["serial"]["packet_size"].as <size_t>();
+    mSerialTimeout                  = Config["serial"]["timeout_ms"].as <uint32_t>();
+    mSerialTimerSleepIntervalMs     = Config["serial"]["timer_wakeup_cd_ms"].as <uint32_t>();
+    mSerialPingIntervalMs           = Config["serial"]["ping_cd_ms"].as <uint32_t>();
 
     //----------//
+
+    auto MaxPWM                     = Config["pwm"]["max_pwm"].as <uint32_t>();
+    auto MaxCoordRadius             = Config["pwm"]["max_coord_radius"].as <float>();
+
+    mMotorPWM                       = new MotorPWM(MaxPWM, MaxCoordRadius);
+
+    //----------//
+
+    mRecordCheckTimeoutMs           = Config["record_cmd"]["status_check_cd_ms"].as <uint32_t>();
+    mRecordStatusCmd                = Config["record_cmd"]["status"].as <std::string>();
+    mRecordStartCmd                 = Config["record_cmd"]["start"].as <std::string>();
+    mRecordStopCmd                  = Config["record_cmd"]["stop"].as <std::string>();
+
+    //----------//
+
+    auto Port                       = Config["smartphone"]["port"].as <uint16_t>();
+    mPacketSize                     = Config["smartphone"]["packet_size"].as <size_t>();
+    mTimeoutMs                      = Config["smartphone"]["timeout_ms"].as <uint32_t>();
+    mTimerSleepIntervalMs           = Config["smartphone"]["timer_wakeup_cd_ms"].as <uint32_t>();
 
     dSocketResult SocketRes;
     mSocketUDP = new dSocket(true);
@@ -40,7 +55,7 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
         }
     }
 
-    if ((SocketRes = mSocketUDP -> finalize(dSocketType::SERVER, tPort)) != dSocketResult::SUCCESS) {
+    if ((SocketRes = mSocketUDP -> finalize(dSocketType::SERVER, Port)) != dSocketResult::SUCCESS) {
         switch (SocketRes) {
             case dSocketResult::WRONG_PROTOCOL:
                 throw std::runtime_error("Server::Server: WRONG_PROTOCOL");
@@ -59,8 +74,8 @@ Server::Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout) : mPac
 
     //----------//
 
-    mSmartphoneReadBuffer       = new uint8_t[tPacketSize];
-    mSmartphoneWriteBuffer      = new uint8_t[tPacketSize];
+    mSmartphoneReadBuffer       = new uint8_t[mPacketSize];
+    mSmartphoneWriteBuffer      = new uint8_t[mPacketSize];
 
     //----------//
 
@@ -484,7 +499,7 @@ ServerResult Server::timerCallback() {
         Dur = std::chrono::system_clock::now() - mRecordLastCheckTime;
 
         if (Dur.count() * 1000 > mRecordCheckTimeoutMs) {
-            Stream = popen("systemctl --user status akula_sensors.service | grep Active", "r");
+            Stream = popen(mRecordStatusCmd.c_str(), "r");
 
             if (Stream != nullptr && fgets(StreamData, 128, Stream) != nullptr) {
                 if (std::strstr(StreamData, "running")) {
@@ -505,7 +520,7 @@ ServerResult Server::timerCallback() {
 
         //----------//
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(mTimerSleepIntervalMs));
     }
 
     return ServerResult::SUCCESS;
@@ -516,9 +531,14 @@ ServerResult Server::timerCallback() {
  */
 void Server::serialCallback() {
     while (!mTerminate.load()) {
-        mMessengerSTM       = new SerialMessenger;
-        mMessengerSTM -> mBuffer = new uint8_t[32];
-        mMonitorSTM         = new SerialMonitor(mSerialPath, 32, mMessengerSTM);
+        mMessengerSTM               = new SerialMessenger;
+        mMessengerSTM -> mBuffer    = new uint8_t[mSerialPacketSize];
+        mMonitorSTM                 = new SerialMonitor(mSerialPath,
+                                                        mSerialPacketSize,
+                                                        mMessengerSTM,
+                                                        mSerialTimeout,
+                                                        mSerialTimerSleepIntervalMs,
+                                                        mSerialPingIntervalMs);
 
         std::future <void> SerialDataThread;
 

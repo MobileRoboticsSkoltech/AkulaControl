@@ -22,7 +22,7 @@ int main() {
     signal(SIGTERM, sigtermHandler);
 
     try {
-        auto AkulaServer = new Server(50000, 32, 1000);
+        auto AkulaServer = new Server;
     } catch (const std::runtime_error& tExcept) {
         std::cerr << tExcept.what() << std::endl;
         return -1;

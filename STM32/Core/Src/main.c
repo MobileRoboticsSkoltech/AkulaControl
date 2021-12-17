@@ -183,8 +183,8 @@ int main(void)
     int RightMinus = 1;
 
     uint32_t CurrentTime;
+    uint32_t LastEncoderTime = HAL_GetTick();
     uint8_t SendResult;
-    uint32_t EncoderSendCounter = 0;
 
   /* USER CODE END 2 */
 
@@ -352,20 +352,20 @@ int main(void)
             uint32_t WriteTag = ENCODER;
             uint8_t SendResult;
 
-            gFrequencyLeft = ((TIM2->CNT)>>2);
-            gFrequencyRight = ((TIM5->CNT)>>2);
+            gFrequencyLeft = TIM2->CNT;
+            gFrequencyRight = TIM5->CNT;
 
             memcpy(WriteBuffer, &WriteTag, 4);
             memcpy(WriteBuffer + 4, &gFrequencyLeft, 8);
             memcpy(WriteBuffer + 12, &gFrequencyRight, 8);
 
-            if (EncoderSendCounter % 100 == 0) {
+            if (HAL_GetTick() - LastEncoderTime >= 50) {
+                LastEncoderTime = HAL_GetTick();
+
                 do {
                     SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
                 } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
             }
-
-            EncoderSendCounter++;
         }
     /* USER CODE END WHILE */
 
@@ -438,18 +438,18 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 1000-1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 65535;
+  htim2.Init.Period = 0xffff;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 15;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 15;
   if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -550,18 +550,18 @@ static void MX_TIM5_Init(void)
   htim5.Instance = TIM5;
   htim5.Init.Prescaler = 1000-1;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 65535;
+  htim5.Init.Period = 0xffff;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
   sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 0;
+  sConfig.IC1Filter = 15;
   sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 0;
+  sConfig.IC2Filter = 15;
   if (HAL_TIM_Encoder_Init(&htim5, &sConfig) != HAL_OK)
   {
     Error_Handler();
