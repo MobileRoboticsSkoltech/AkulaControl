@@ -1,5 +1,8 @@
 package com.example.androidapp;
-
+//-----------------------------//
+/**
+ * Header enum is used as packets' tag
+ */
 public enum Header {
     REQUEST_CONN(0),
     JOYSTICK_COORDS(1),
@@ -17,9 +20,13 @@ public enum Header {
 
     private final int mValue;
 
+    //----------//
+
     Header(int tValue) {
         this.mValue = tValue;
     }
+
+    //----------//
 
     public static Header fromInt(int tValue) {
         if (tValue == 0) {

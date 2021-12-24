@@ -3,10 +3,7 @@ package com.example.androidapp;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
-import android.os.SystemClock;
-
 import androidx.annotation.RequiresApi;
-
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
@@ -16,6 +13,12 @@ import java.time.LocalTime;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 //-----------------------------//
+/**
+ * Main networking class that sets up three threads for reading, writing sockets and processing
+ * UDP packets. For synchronization between them functions fillReadBuffer, getReadBuffer,
+ * fillWriteBuffer and getWriteBuffer are used. Very important to notice that endian of the sent
+ * and received values is changed due to some differences Java in this app and C++ server
+ */
 public class Client {
     public Client(int tPacketSize, int tConnTimeout, android.os.Handler tHandler) {
         mPacketSize     = tPacketSize;
@@ -132,12 +135,10 @@ public class Client {
     void readFunc() {
         byte[]              Packet      = new byte[mPacketSize];
         DatagramPacket      PacketUDP   = new DatagramPacket(Packet, Packet.length);
-        boolean             NewData     = false;    //---Do I really need this?---//
 
-        while (!NewData && !mTerminate.get()) {
+        while (!mTerminate.get()) {
             try {
                 mSocket.receive(PacketUDP);
-                NewData = true;
             } catch (SocketTimeoutException tExcept) {
                 System.err.println("readFunc: receive timeout!");
                 continue;
@@ -154,8 +155,6 @@ public class Client {
             if (!fillReadBuffer(Packet)) {
                 return;
             }
-
-            NewData = false;
         }
     }
     @RequiresApi(api = Build.VERSION_CODES.O)

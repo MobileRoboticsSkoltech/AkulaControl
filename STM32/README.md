@@ -22,12 +22,12 @@ STLinkv2 (mini-USB) is (usually) ttyACM0, Virtual port (micro-USB) is (usually) 
 In order to have constant name for serial port (instead of ttyACM[0-9]) you need to create custom udev rule:
 
 1. Connect all the cables to your stm32 board with configured virtual port
-2. Find all the serial port names (usually ttyACM0 and ttyACM1) and enter commands in the terminal: "**udevadm info -a /dev/ttyACM0**"" and "**udevadm info -a /dev/ttyACM1**""
-3. Find the "**vendorId**" (in our case it is **0483**) and something you can use to differentiate between ports (in our case it will be "**productId**": "**374b**" for StLink and "**5740**" for virtual port); this also can be done using command "**lsusb**"
+2. Find all the serial port names (usually ttyACM0 and ttyACM1) and enter commands in the terminal: "**udevadm info -a /dev/ttyACM0**" and "**udevadm info -a /dev/ttyACM1**"
+3. Find the "**vendorId**" (in our case it is **0483**) and something you can use to differentiate between ports (in our case it will be "**productId**": "**374b**" for StLink and "**5740**" for virtual port); this also can be done using command "**lsusb**" To use two or more such boards you can also add "**serial**" field (**374E346C3339** in our case)
 4. Create custom udev rule using "**sudo nano /etc/udev/rules.d/49-custom.rules**"
 5. Add line (enter your own idProduct or other parameters and tty name you want to use for vitual port)
 ```
-KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", MODE="0666", SYMLINK="ttyStmVP"
+KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5740", ATTRS{serial}=="374E346C3339", MODE="0666", SYMLINK="ttyControlSTM32"
 ```
 6. Unplug and plug again virtual port micro usb
 
@@ -41,21 +41,31 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProdu
 
 ### Clock Configuration:
 
-1. As long as TIM3 is related to "**APB2**", set "**APB2 Prescaler**" to "**/8**"
-2. You should get 42MHz for "**APB2 timer clocks**" (this value is very important!)
+1. As long as TIM3 is related to "**APB1**", set "**APB1 Prescaler**" to "**/4**"
+2. You should get 84MHz for "**APB1 timer clocks**" (this value is very important!)
 
 ### PWM parameters
 
 1. Define the update frequency of PWM signals, try to make it higher to avoid unpleasant high pitch noise (in our case it is 60kHz)
-2. Define the period or the number of steps for one PWM signal (in our case it is 139)
+2. Define the period or the number of steps for one PWM signal (in our case it is 279)
 3. Calculate the prescaler using formula ```Prescaler = TIM3Clock / UpdateFrequency / (Period + 1) - 1```
-4. In "**TIM3 -> Parameter Settings**" set "**Prescaler**" (5 in our case) and also "**Counter Period**" and "**Pulse**" for both channels (139 in our case)
+4. In "**TIM3 -> Parameter Settings**" set "**Prescaler**" (5-1 in our case) and also "**Counter Period**" and "**Pulse**" for both channels (279 in our case)
 
 ![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/TIM3.png)
 
 ### Final clocks
 
 ![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/Clock.png)
+
+# Setting timers for Hall sensors (Encoder Mode)
+
+### Pinout:
+
+1. In TIM2 and TIM5 set Clock Source to "**Internal Clock**"
+2. Set "**Combined Channels**" to "**Encoder Mode**"
+3. For both timers in "**Parameter Settings**" set "**Prescaler**" (1000-1 in our case) and "**Counter Period**" (65535 in our case), also in the "**Encoder**" section set "**Encoder Mode**" parameter to "**Encoder Mode TI1 and TI2**" and "**Input Filter**" to 15 for both channels
+
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/Encoder.png)
 
 # Setting Clion for stm32 development (optional)
 

@@ -1,15 +1,14 @@
 package com.example.androidapp;
-
+//-----------------------------//
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//-----------------------------//
 /**
  * @description
  * The class operates as a connector between Client and UI
@@ -20,6 +19,10 @@ class NetworkThread extends HandlerThread {
         mHandlerUI = tHandler;
     }
 
+    /**
+     * Main function that handles all the messages passed from the Client class and translates
+     * them to the UI thread
+     */
     @Override
     protected void onLooperPrepared() {
         super.onLooperPrepared();
@@ -103,13 +106,7 @@ class NetworkThread extends HandlerThread {
 
                         break;
                     case LATENCY_RESPONSE:
-                        System.out.println("Sending latency to UI...");
-                        Msg.copyFrom(tMsg);
-                        mHandlerUI.sendMessage(Msg);
-
-                        break;
                     case ENCODER:
-                        System.out.println("Sending encoder data to UI...");
                         Msg.copyFrom(tMsg);
                         mHandlerUI.sendMessage(Msg);
 
@@ -128,7 +125,13 @@ class NetworkThread extends HandlerThread {
         }
     }
 
-
+    /**
+     * Function tries to establish connection with a server
+     * @param tIP Server address
+     * @param tPort Server port
+     * @throws SocketException Not handled properly
+     * @throws UnknownHostException Not handled properly
+     */
     void sendConnectionRequest(String tIP, int tPort) throws SocketException, UnknownHostException {
         String IpRange = "(?:0|[1-9]|[1-9][0-9]|1[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
         Pattern IpPattern = Pattern.compile("^" + IpRange + "\\." + IpRange + "\\." + IpRange + "\\." + IpRange + "$");
@@ -184,6 +187,9 @@ class NetworkThread extends HandlerThread {
         }
     }
 
+    /**
+     * Latency test packet goes to the server, then to stm32 and back
+     */
     void sendLatencyTest() {
         if (mHandler != null) {
             Message Msg = mHandler.obtainMessage();

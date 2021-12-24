@@ -1,10 +1,9 @@
 package com.example.androidapp;
-
+//-----------------------------//
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
-
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,13 +14,17 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-
 import java.lang.ref.WeakReference;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//-----------------------------//
+/**
+ * Retrieves objects from activity_main.xml, sets colors for all the indicators.
+ * Important to notice that network thread is closed when this app is minimized due
+ * to safety reasons (control is lost otherwise)
+ */
 public class MainActivity extends AppCompatActivity {
     static class HandlerUI extends Handler {
         HandlerUI() {
@@ -232,7 +235,8 @@ public class MainActivity extends AppCompatActivity {
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(tView.getWindowToken(), 0);
 
-            if (!IpLine.getText().toString().matches("") && !PortLine.getText().toString().matches("")) {                                       //---Add validator---//
+            ///---TODO: Add validator---///
+            if (!IpLine.getText().toString().matches("") && !PortLine.getText().toString().matches("")) {
                 try {
                     mNetworkThread.sendConnectionRequest(IpLine.getText().toString(), Integer.parseInt(PortLine.getText().toString()));
                 } catch (SocketException | UnknownHostException e) {

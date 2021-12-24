@@ -1,14 +1,18 @@
 package com.example.androidapp;
-
+//-----------------------------//
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
-
 import androidx.annotation.Nullable;
-
+//-----------------------------//
+/**
+ * Class represents status of some kind (virtual LED)
+ * In this app it's used to indicate connection to the server (green LED),
+ * stm32 connection (yellow LED) and ROS recording state (red LED)
+ */
 public class ConnIndicator extends View {
     public ConnIndicator(Context tContext) {
         super(tContext);
@@ -34,7 +38,7 @@ public class ConnIndicator extends View {
         mColors.setARGB(255, mBackgroundColor[0], mBackgroundColor[1], mBackgroundColor[0]);
         tCanvas.drawCircle((float)getWidth() / 2, (float)getHeight() / 2, 50.0f, mColors);
 
-        if (mConnected) {
+        if (mActive) {
             mColors.setARGB(255, mEnableColor[0], mEnableColor[1], mEnableColor[2]);
         } else {
             mColors.setARGB(255, mDisableColor[0], mDisableColor[1], mDisableColor[2]);
@@ -45,6 +49,9 @@ public class ConnIndicator extends View {
 
     //----------//
 
+    /**
+     * Setting default colors
+     */
     private void initColors() {
         mEnableColor[0] = 0;
         mEnableColor[1] = 200;
@@ -61,21 +68,43 @@ public class ConnIndicator extends View {
 
     //----------//
 
+    /**
+     * Changing state leads to setting active/inactive status of the indicator
+     * @param tState Activate the indicator
+     */
     void setConnectionState(boolean tState) {
-        mConnected = tState;
+        mActive = tState;
         invalidate();
     }
 
+    /**
+     * Set color for the active state of the indicator
+     * @param tRed Red component
+     * @param tGreen Green component
+     * @param tBlue Blue component
+     */
     void setEnableColor(int tRed, int tGreen, int tBlue) {
         mEnableColor[0] = tRed;
         mEnableColor[1] = tGreen;
         mEnableColor[2] = tBlue;
     }
+    /**
+     * Set color for the inactive state of the indicator
+     * @param tRed Red component
+     * @param tGreen Green component
+     * @param tBlue Blue component
+     */
     void setDisableColor(int tRed, int tGreen, int tBlue) {
         mDisableColor[0] = tRed;
         mDisableColor[1] = tGreen;
         mDisableColor[2] = tBlue;
     }
+    /**
+     * Set color for the background of the indicator
+     * @param tRed Red component
+     * @param tGreen Green component
+     * @param tBlue Blue component
+     */
     void setBackgroundColor(int tRed, int tGreen, int tBlue) {
         mBackgroundColor[0] = tRed;
         mBackgroundColor[1] = tGreen;
@@ -85,9 +114,9 @@ public class ConnIndicator extends View {
     //----------//
 
     private final Paint     mColors             = new Paint();
-    private boolean         mConnected          = false;
+    private boolean         mActive             = false;
 
-    private int[]           mEnableColor        = new int[3];
-    private int[]           mDisableColor       = new int[3];
-    private int[]           mBackgroundColor    = new int[3];
+    private final int[]     mEnableColor        = new int[3];
+    private final int[]     mDisableColor       = new int[3];
+    private final int[]     mBackgroundColor    = new int[3];
 }
