@@ -1,3 +1,6 @@
 [submodule "DesktopServer/lib/dSocket"]
 	path = DesktopServer/lib/dSocket
 	url = https://github.com/Devilox96/dSocket.git
+[submodule "AkulaPackageROS2/src/dSocket"]
+	path = AkulaPackageROS2/src/dSocket
+	url = https://github.com/Devilox96/dSocket.git
