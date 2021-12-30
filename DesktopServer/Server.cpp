@@ -43,6 +43,9 @@ Server::Server() {
 
     dSocketResult SocketRes;
     mSocketUDP = new dSocket(true);
+    mSensorSocketUDP = new dSocket(true);
+
+    //----------//
 
     if ((SocketRes = mSocketUDP -> init(dSocketProtocol::UDP)) != dSocketResult::SUCCESS) {
         switch (SocketRes) {
@@ -74,14 +77,48 @@ Server::Server() {
 
     //----------//
 
+    if ((SocketRes = mSensorSocketUDP -> init(dSocketProtocol::UDP)) != dSocketResult::SUCCESS) {
+        switch (SocketRes) {
+            case dSocketResult::WRONG_PROTOCOL:
+                throw std::runtime_error("Server::Server: WRONG_PROTOCOL");
+            case dSocketResult::CREATE_FAILURE:
+                throw std::runtime_error("Server::Server: CREATE_FAILURE, " + mSensorSocketUDP -> getLastError());
+            default:
+                throw std::runtime_error("Server::Server: this should have not occurred!");
+        }
+    }
+
+    if ((SocketRes = mSensorSocketUDP -> finalize(dSocketType::CLIENT, 50001, "127.0.0.1")) != dSocketResult::SUCCESS) {
+        switch (SocketRes) {
+            case dSocketResult::WRONG_PROTOCOL:
+                throw std::runtime_error("Server::Server: WRONG_PROTOCOL");
+            case dSocketResult::NO_SOCKET_TYPE:
+                throw std::runtime_error("Server::Server: NO_SOCKET_TYPE");
+            case dSocketResult::BIND_FAILURE:
+                throw std::runtime_error("Server::Server: BIND_FAILURE, " + mSensorSocketUDP -> getLastError());
+            case dSocketResult::LISTEN_FAILURE:
+                throw std::runtime_error("Server::Server: LISTEN_FAILURE, " + mSensorSocketUDP -> getLastError());
+            case dSocketResult::ADDRESS_CONVERSION_FAILURE:
+                throw std::runtime_error("Server::Server: ADDRESS_CONVERSION_FAILURE, " + mSensorSocketUDP -> getLastError());
+            default:
+                throw std::runtime_error("Server::Server: this should have not occurred!");
+        }
+    }
+
+    //----------//
+
     mSmartphoneReadBuffer       = new uint8_t[mPacketSize];
     mSmartphoneWriteBuffer      = new uint8_t[mPacketSize];
+
+    mSensorWriteBuffer          = new uint8_t[mPacketSize];
 
     //----------//
 
     mSmartphoneReadThread       = std::async(std::launch::async, &Server::smartphoneReadCallback, this);
     mSmartphoneWriteThread      = std::async(std::launch::async, &Server::smartphoneWriteCallback, this);
     mSmartphoneProcessThread    = std::async(std::launch::async, &Server::smartphoneProcessCallback, this);
+
+    mSensorWriteThread          = std::async(std::launch::async, &Server::sensorWriteCallback, this);
 
     mTimerThread                = std::async(std::launch::async, &Server::timerCallback, this);
     mSerialThread               = std::async(std::launch::async, &Server::serialCallback, this);
@@ -110,6 +147,12 @@ Server::~Server() {
         }
     }
 
+    if (mSensorWriteThread.valid()) {
+        if ((SocketRes = mSensorWriteThread.get()) != dSocketResult::SUCCESS) {
+            std::cerr << "mSensorWriteThread error: " << static_cast <uint32_t>(SocketRes) << std::endl;
+        }
+    }
+
     if (mTimerThread.valid()) {
         if ((ServerRes = mTimerThread.get()) != ServerResult::SUCCESS) {
             std::cerr << "mTimerThread error: " << static_cast <uint32_t>(ServerRes) << std::endl;
@@ -122,6 +165,8 @@ Server::~Server() {
 
     delete[](mSmartphoneReadBuffer);
     delete[](mSmartphoneWriteBuffer);
+
+    delete[](mSensorWriteBuffer);
 }
 //-----------------------------//
 /**
@@ -136,11 +181,16 @@ void Server::terminate() {
     mSmartphoneReadBufferCV.notify_all();
     mSmartphoneWriteBufferCV.notify_all();
 
+    mSensorWriteBufferCV.notify_all();
+
     delete(mSocketUDP);
+    delete(mSensorSocketUDP);
 
     mSmartphoneReadCV.notify_one();
     mSmartphoneWriteCV.notify_one();
     mSmartphoneProcessCV.notify_one();
+
+    mSensorWriteCV.notify_one();
 
     mMonitorSTM -> terminate();
 }
@@ -249,6 +299,46 @@ dSocketResult Server::smartphoneWriteCallback() {
         }
 
         mSmartphoneWriteState = false;
+    }
+
+    return dSocketResult::SUCCESS;
+}
+
+dSocketResult Server::sensorWriteCallback() {
+    uint8_t Packet[mPacketSize];
+    std::unique_lock <std::mutex> Lock(mSensorWriteMutex);
+    ssize_t WrittenBytes;
+    size_t WrittenTotal = 0;
+    dSocketResult Result;
+
+    while (!mTerminate.load()) {
+        mSensorWriteCV.wait(Lock, [this] {
+            return mSensorWriteState || mTerminate.load();
+        });
+
+        if (mTerminate.load() || !getSensorWriteBuffer(Packet)) {
+            break;
+        }
+
+        while (WrittenTotal < mPacketSize) {
+            Result = mSensorSocketUDP -> writeUDP(Packet + WrittenTotal, mPacketSize - WrittenTotal, &WrittenBytes);
+
+            switch (Result) {
+                case dSocketResult::SUCCESS:
+                    WrittenTotal += WrittenBytes;
+                    break;
+                default:
+                    ///---TODO: Add proper termination handling---///
+                    //---There could be an error related to disconnection---//
+                    //---Need to fix dSocket in the future---//
+                    terminate();
+                    return dSocketResult::WRITE_ERROR;
+            }
+        }
+
+        WrittenTotal = 0;
+
+        mSensorWriteState = false;
     }
 
     return dSocketResult::SUCCESS;
@@ -453,6 +543,50 @@ bool Server::getSmartphoneWriteBuffer(uint8_t* tBuffer) {
     return true;
 }
 //-----------------------------//
+bool Server::fillSensorWriteBuffer(const uint8_t* tBuffer) {
+    std::unique_lock <std::mutex> Lock(mSensorWriteBufferMutex);
+
+    mSensorWriteBufferCV.wait(Lock, [this] {
+        return !mSensorWriteBufferReady || mTerminate.load();
+    });
+
+    if (mTerminate.load()) {
+        return false;
+    }
+
+    memcpy(mSensorWriteBuffer, tBuffer, mPacketSize);
+
+    {
+        std::scoped_lock <std::mutex> StateLock(mSensorWriteMutex);         //---Lost wake up prevention---//
+        mSensorWriteState = true;
+    }
+
+    mSensorWriteBufferReady = true;
+
+    mSensorWriteCV.notify_one();
+    mSensorWriteBufferCV.notify_one();
+
+    return true;
+};
+bool Server::getSensorWriteBuffer(uint8_t* tBuffer) {
+    std::unique_lock <std::mutex> Lock(mSensorWriteBufferMutex);
+
+    mSensorWriteBufferCV.wait(Lock, [this] {
+        return mSensorWriteBufferReady || mTerminate.load();
+    });
+
+    if (mTerminate.load()) {
+        return false;
+    }
+
+    memcpy(tBuffer, mSensorWriteBuffer, mPacketSize);
+
+    mSensorWriteBufferReady = false;
+    mSensorWriteBufferCV.notify_one();
+
+    return true;
+}
+//-----------------------------//
 /**
  * @description
  * Timer function is executed in a separate thread during server's uptime. The thread wakes up periodically to
@@ -628,6 +762,7 @@ void Server::serialDataCallback() {
             memcpy(&Right, mMessengerSTM -> mBuffer + 12, 8);
 
             fillSmartphoneWriteBuffer(Packet);
+            fillSensorWriteBuffer(Packet);
             std::cout << "Encoder data from STM32: " << Left << ", " << Right << std::endl;
         }
 

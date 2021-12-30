@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(AkulaPackage)
+project(akula_package)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -21,6 +21,8 @@ find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+find_package(akula_package REQUIRED)
 #---ROS packages---#
 
 #---YAML---#
@@ -29,7 +31,8 @@ find_package(yaml-cpp)
 
 add_executable(AkulaMainNode
         src/AkulaMainNode.cpp
-        src/SerialConnector.cpp)
+        src/SerialConnector.cpp
+        src/dSocket/dSocket.cpp)
 target_include_directories(AkulaMainNode PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -39,7 +42,10 @@ ament_target_dependencies(AkulaMainNode
         rclcpp
         std_msgs
         sensor_msgs
-        ament_index_cpp)
+        ament_index_cpp
+        akula_package)
+rosidl_generate_interfaces(${PROJECT_NAME}
+        "msg/Encoders.msg")
 
 install(TARGETS AkulaMainNode
   DESTINATION lib/${PROJECT_NAME})

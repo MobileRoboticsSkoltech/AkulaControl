@@ -67,6 +67,7 @@ private:
     //----------//
 
     dSocket*                                    mSocketUDP                              = nullptr;
+    dSocket*                                    mSensorSocketUDP                        = nullptr;
 
     sockaddr_in                                 mSmartphoneAddr                         = {};
     socklen_t                                   mSmartphoneAddrLen                      = 0;
@@ -80,11 +81,15 @@ private:
     uint8_t*                                    mSmartphoneReadBuffer                   = nullptr;
     uint8_t*                                    mSmartphoneWriteBuffer                  = nullptr;
 
+    uint8_t*                                    mSensorWriteBuffer                      = nullptr;
+
     //----------//
 
     std::future <dSocketResult>                 mSmartphoneReadThread;
     std::future <dSocketResult>                 mSmartphoneWriteThread;
     std::future <dSocketResult>                 mSmartphoneProcessThread;
+
+    std::future <dSocketResult>                 mSensorWriteThread;
 
     std::condition_variable                     mSmartphoneReadCV;
     std::condition_variable                     mSmartphoneWriteCV;
@@ -107,6 +112,16 @@ private:
 
     bool                                        mSmartphoneReadBufferReady              = false;
     bool                                        mSmartphoneWriteBufferReady             = false;
+
+    //----------//
+
+    std::condition_variable                     mSensorWriteCV;
+    std::mutex                                  mSensorWriteMutex;
+    bool                                        mSensorWriteState                       = false;
+
+    std::condition_variable                     mSensorWriteBufferCV;
+    std::mutex                                  mSensorWriteBufferMutex;
+    bool                                        mSensorWriteBufferReady                 = false;
 
     //----------//
 
@@ -138,6 +153,8 @@ private:
     dSocketResult smartphoneWriteCallback();
     dSocketResult smartphoneProcessCallback();
 
+    dSocketResult sensorWriteCallback();
+
     //----------//
 
     bool fillSmartphoneReadBuffer(const uint8_t* tBuffer);
@@ -145,6 +162,9 @@ private:
 
     bool fillSmartphoneWriteBuffer(const uint8_t* tBuffer);
     bool getSmartphoneWriteBuffer(uint8_t* tBuffer);
+
+    bool fillSensorWriteBuffer(const uint8_t* tBuffer);
+    bool getSensorWriteBuffer(uint8_t* tBuffer);
 
     //----------//
 
