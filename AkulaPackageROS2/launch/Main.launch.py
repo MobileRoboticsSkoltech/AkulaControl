@@ -37,8 +37,13 @@ def generate_launch_description():
             name='Basler'
         ),
         Node(
-            package='AkulaPackage',
-            executable='AkulaMainNode',
-            name='AkulaIMU'
-        )
+            package='akula_package',
+            executable='AkulaEncoderNode',
+            name='AkulaEncoders'
+        ),
+        #Node(
+        #    package='AkulaPackage',
+        #    executable='AkulaMainNode',
+        #    name='AkulaIMU'
+        #)
     ])

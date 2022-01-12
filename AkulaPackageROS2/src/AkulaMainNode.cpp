@@ -9,8 +9,6 @@
 #include <yaml-cpp/yaml.h>
 //-----------------------------//
 #include "AkulaPackage/SerialConnector.h"
-#include "dSocket/dSocket.h"
-#include "akula_package/msg/encoders.hpp"
 //-----------------------------//
 constexpr size_t PacketSize = 22;
 //-----------------------------//
@@ -20,66 +18,17 @@ public:
         mPubIMU                     = create_publisher <sensor_msgs::msg::Imu>("mcu_imu", 1000);
         mPubTemp                    = create_publisher <sensor_msgs::msg::Temperature>("mcu_imu_temp", 1000);
         mPubCameraTS                = create_publisher <sensor_msgs::msg::TimeReference>("mcu_cameras_ts", 1000);
-        mEncoders                   = create_publisher <akula_package::msg::Encoders>("encoders", 1000);
 
         std::string PackagePath     = ament_index_cpp::get_package_share_directory("AkulaPackage");
         YAML::Node Config           = YAML::LoadFile(PackagePath + "/config/imu.yaml");
         std::string SerialPath      = Config["serial"].as <std::string>();
 
         mConnector                  = new SerialConnector(SerialPath, B115200, 1000, PacketSize);
-
-        //----------//
-
-        dSocketResult SocketRes;
-        mSocketUDP = new dSocket(true);
-
-        if ((SocketRes = mSocketUDP -> init(dSocketProtocol::UDP)) != dSocketResult::SUCCESS) {
-            switch (SocketRes) {
-                case dSocketResult::WRONG_PROTOCOL:
-                    throw std::runtime_error("Server::Server: WRONG_PROTOCOL");
-                case dSocketResult::CREATE_FAILURE:
-                    throw std::runtime_error("Server::Server: CREATE_FAILURE, " + mSocketUDP -> getLastError());
-                default:
-                    throw std::runtime_error("Server::Server: this should have not occurred!");
-            }
-        }
-
-        if ((SocketRes = mSocketUDP -> finalize(dSocketType::SERVER, 50001)) != dSocketResult::SUCCESS) {
-            switch (SocketRes) {
-                case dSocketResult::WRONG_PROTOCOL:
-                    throw std::runtime_error("Server::Server: WRONG_PROTOCOL");
-                case dSocketResult::NO_SOCKET_TYPE:
-                    throw std::runtime_error("Server::Server: NO_SOCKET_TYPE");
-                case dSocketResult::BIND_FAILURE:
-                    throw std::runtime_error("Server::Server: BIND_FAILURE, " + mSocketUDP -> getLastError());
-                case dSocketResult::LISTEN_FAILURE:
-                    throw std::runtime_error("Server::Server: LISTEN_FAILURE, " + mSocketUDP -> getLastError());
-                case dSocketResult::ADDRESS_CONVERSION_FAILURE:
-                    throw std::runtime_error("Server::Server: ADDRESS_CONVERSION_FAILURE, " + mSocketUDP -> getLastError());
-                default:
-                    throw std::runtime_error("Server::Server: this should have not occurred!");
-            }
-        }
-
-        mServerReadThread = std::async(std::launch::async, &AkulaMainNode::serverReadCallback, this);
     }
     ~AkulaMainNode() {
         if (mConnector) {
             delete(mConnector);
             mConnector = nullptr;
-        }
-
-        if (mSocketUDP) {
-            delete(mSocketUDP);
-            mSocketUDP = nullptr;
-        }
-
-        dSocketResult SocketRes;
-
-        if (mServerReadThread.valid()) {
-            if ((SocketRes = mServerReadThread.get()) != dSocketResult::SUCCESS) {
-                std::cerr << "mServerReadThread error: " << static_cast <uint32_t>(SocketRes) << std::endl;
-            }
         }
     }
 
@@ -115,9 +64,6 @@ public:
     }
 private:
     SerialConnector*                mConnector                  = nullptr;
-    dSocket*                        mSocketUDP                  = nullptr;
-
-    std::future <dSocketResult>     mServerReadThread;
 
     uint8_t                         mBuffer[PacketSize];
     int16_t                         mTempVal;
@@ -133,53 +79,6 @@ private:
     std::shared_ptr <rclcpp::Publisher <sensor_msgs::msg::Imu>>             mPubIMU;
     std::shared_ptr <rclcpp::Publisher <sensor_msgs::msg::Temperature>>     mPubTemp;
     std::shared_ptr <rclcpp::Publisher <sensor_msgs::msg::TimeReference>>   mPubCameraTS;
-    std::shared_ptr <rclcpp::Publisher <akula_package::msg::Encoders>>      mEncoders;
-
-    //----------//
-
-    dSocketResult serverReadCallback() {
-        size_t PacketSize = 32;
-        uint8_t Packet[PacketSize];
-        sockaddr_in ClientAddr {};
-        socklen_t ClientAddrLen = sizeof(ClientAddr);
-        ssize_t ReadBytes;
-        size_t ReadTotal = 0;
-        dSocketResult Result;
-
-        while (rclcpp::ok()) {
-            while (ReadTotal < PacketSize && rclcpp::ok()) {
-                Result = mSocketUDP -> readUDP(Packet + ReadTotal, PacketSize - ReadTotal, &ReadBytes,
-                                               reinterpret_cast <sockaddr*>(&ClientAddr), &ClientAddrLen);
-
-                switch (Result) {
-                    case dSocketResult::SUCCESS:
-                        ReadTotal += ReadBytes;
-                        break;
-                    case dSocketResult::RECV_TIMEOUT:
-                        ReadTotal = 0;
-                        break;
-                    default:
-                        ///---TODO: skip some particular errors and terminate on others---///
-                        return dSocketResult::READ_ERROR;
-                }
-            }
-
-            ReadTotal = 0;
-
-            if (!rclcpp::ok()) {
-                break;
-            }
-
-            akula_package::msg::Encoders Msg;
-
-            memcpy(&Msg.left, Packet + 4, 8);
-            memcpy(&Msg.right, Packet + 12, 8);
-
-            mEncoders -> publish(Msg);
-        }
-
-        return dSocketResult::SUCCESS;
-    }
 
     //----------//
 
@@ -216,7 +115,7 @@ void sigintHandler(int tSigNum) {
     rclcpp::shutdown();
 }
 //-----------------------------//
-int main(int argc, char ** argv) {
+int main(int argc, char** argv) {
     signal(SIGINT, sigintHandler);
     rclcpp::init(argc, argv);
 

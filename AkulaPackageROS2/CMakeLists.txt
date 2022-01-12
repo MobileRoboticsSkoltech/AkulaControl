@@ -29,25 +29,45 @@ find_package(akula_package REQUIRED)
 find_package(yaml-cpp)
 #---YAML---#
 
+#---Executables---#
 add_executable(AkulaMainNode
         src/AkulaMainNode.cpp
         src/SerialConnector.cpp
         src/dSocket/dSocket.cpp)
+add_executable(AkulaEncoderNode
+        src/AkulaEncoderNode.cpp
+        src/dSocket/dSocket.cpp)
+#---Executables---#
+
+#---Include---#
 target_include_directories(AkulaMainNode PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+target_include_directories(AkulaEncoderNode PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>)
+#---Include---#
+
 target_link_libraries(AkulaMainNode
         ${YAML_CPP_LIBRARIES})
+
+#---Ament---#
 ament_target_dependencies(AkulaMainNode
         rclcpp
         std_msgs
         sensor_msgs
         ament_index_cpp
         akula_package)
+ament_target_dependencies(AkulaEncoderNode
+        rclcpp
+        ament_index_cpp
+        akula_package)
+#---Ament---#
+
 rosidl_generate_interfaces(${PROJECT_NAME}
         "msg/Encoders.msg")
 
-install(TARGETS AkulaMainNode
+install(TARGETS AkulaMainNode AkulaEncoderNode
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
