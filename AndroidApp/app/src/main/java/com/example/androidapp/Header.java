@@ -16,7 +16,11 @@ public enum Header {
     STM32_ONLINE(9),
     STM32_DISCONNECTED(10),
     RECORD_ACTIVE(11),
-    RECORD_INACTIVE(12);
+    RECORD_INACTIVE(12),
+    SENSOR_ACTIVE(13),
+    SENSOR_INACTIVE(14),
+    TOGGLE_RECORD(15),
+    TOGGLE_SENSOR(16);
 
     private final int mValue;
 
@@ -55,6 +59,14 @@ public enum Header {
             return RECORD_ACTIVE;
         } else if (tValue == 12) {
             return RECORD_INACTIVE;
+        } else if (tValue == 13) {
+            return SENSOR_ACTIVE;
+        } else if (tValue == 14) {
+            return SENSOR_INACTIVE;
+        } else if (tValue == 15) {
+            return TOGGLE_RECORD;
+        } else if (tValue == 16) {
+            return TOGGLE_SENSOR;
         } else {
             return null;
         }

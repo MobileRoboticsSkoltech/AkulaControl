@@ -43,7 +43,7 @@ def generate_launch_description():
         ),
         #Node(
         #    package='AkulaPackage',
-        #    executable='AkulaMainNode',
+        #    executable='AkulaImuNode',
         #    name='AkulaIMU'
         #)
     ])

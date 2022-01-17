@@ -125,6 +125,32 @@ public class Client {
 
         mLatencyTestStart = System.nanoTime();
     }
+    public void sendRecordState() {
+        byte[] Packet = new byte[mPacketSize];
+        byte[] Zeros = new byte[mPacketSize - 4];
+        Header Tag = Header.TOGGLE_RECORD;
+
+        ByteBuffer Buffer = ByteBuffer.wrap(Packet);
+        Buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        Buffer.putInt(Tag.getValue());
+        Buffer.put(Zeros);
+
+        fillWriteBuffer(Packet);
+    }
+    public void sendSensorState() {
+        byte[] Packet = new byte[mPacketSize];
+        byte[] Zeros = new byte[mPacketSize - 4];
+        Header Tag = Header.TOGGLE_SENSOR;
+
+        ByteBuffer Buffer = ByteBuffer.wrap(Packet);
+        Buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        Buffer.putInt(Tag.getValue());
+        Buffer.put(Zeros);
+
+        fillWriteBuffer(Packet);
+    }
 
     public boolean isRunning() {
         return mRunning;
@@ -258,6 +284,7 @@ public class Client {
 
                         byte Stm32State = Buffer.get();
                         byte RecordState = Buffer.get();
+                        byte SensorState = Buffer.get();
 
                         byte[] PingPacket = new byte[mPacketSize];
 
@@ -273,11 +300,10 @@ public class Client {
                             return;
                         }
 
-                        System.out.println(Stm32State);
-
-                        Bundle PingBund = new Bundle(2);
+                        Bundle PingBund = new Bundle(3);
                         PingBund.putByte("stm32", Stm32State);
                         PingBund.putByte("record", RecordState);
+                        PingBund.putByte("sensor", SensorState);
                         Msg.setData(PingBund);
                         Msg.what = Header.PING.getValue();
                         mHandler.sendMessage(Msg);

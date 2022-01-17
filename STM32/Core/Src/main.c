@@ -349,22 +349,24 @@ int main(void)
                 continue;
             }
 
-            uint32_t WriteTag = ENCODER;
-            uint8_t SendResult;
-
-            gFrequencyLeft = TIM2->CNT;
-            gFrequencyRight = TIM5->CNT;
-
-            memcpy(WriteBuffer, &WriteTag, 4);
-            memcpy(WriteBuffer + 4, &gFrequencyLeft, 8);
-            memcpy(WriteBuffer + 12, &gFrequencyRight, 8);
-
             if (HAL_GetTick() - LastEncoderTime >= 50) {
                 LastEncoderTime = HAL_GetTick();
+
+                WriteTag = ENCODER;
+
+                gFrequencyLeft = TIM2->CNT;
+                gFrequencyRight = TIM5->CNT;
+
+                memcpy(WriteBuffer, &WriteTag, 4);
+                memcpy(WriteBuffer + 4, &LastEncoderTime, 4);
+                memcpy(WriteBuffer + 8, &gFrequencyLeft, 8);
+                memcpy(WriteBuffer + 16, &gFrequencyRight, 8);
 
                 do {
                     SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
                 } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
+
+                WriteTag = INVALID;
             }
         }
     /* USER CODE END WHILE */

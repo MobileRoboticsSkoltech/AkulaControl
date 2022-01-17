@@ -12,9 +12,9 @@
 //-----------------------------//
 constexpr size_t PacketSize = 22;
 //-----------------------------//
-class AkulaMainNode : public rclcpp::Node {
+class AkulaImuNode : public rclcpp::Node {
 public:
-    AkulaMainNode() : Node("AkulaMainNode") {
+    AkulaImuNode() : Node("AkulaImuNode") {
         mPubIMU                     = create_publisher <sensor_msgs::msg::Imu>("mcu_imu", 1000);
         mPubTemp                    = create_publisher <sensor_msgs::msg::Temperature>("mcu_imu_temp", 1000);
         mPubCameraTS                = create_publisher <sensor_msgs::msg::TimeReference>("mcu_cameras_ts", 1000);
@@ -23,13 +23,21 @@ public:
         YAML::Node Config           = YAML::LoadFile(PackagePath + "/config/imu.yaml");
         std::string SerialPath      = Config["serial"].as <std::string>();
 
-        mConnector                  = new SerialConnector(SerialPath, B115200, 1000, PacketSize);
+        mBuffer                     = new uint8_t[PacketSize];
+
+        try {
+            mConnector = new SerialConnector(SerialPath, B115200, 1000, PacketSize);
+        } catch (const std::exception& tExcept) {
+            throw;
+        }
     }
-    ~AkulaMainNode() {
+    ~AkulaImuNode() {
         if (mConnector) {
             delete(mConnector);
             mConnector = nullptr;
         }
+
+        delete[](mBuffer);
     }
 
     //----------//
@@ -65,7 +73,7 @@ public:
 private:
     SerialConnector*                mConnector                  = nullptr;
 
-    uint8_t                         mBuffer[PacketSize];
+    uint8_t*                        mBuffer                     = nullptr;
     int16_t                         mTempVal;
 
     uint32_t                        mSeconds;
@@ -111,7 +119,7 @@ private:
 };
 //-----------------------------//
 void sigintHandler(int tSigNum) {
-    std::cout << "Receive signum: " << tSigNum << std::endl;
+    std::cout << "Received signum: " << tSigNum << std::endl;
     rclcpp::shutdown();
 }
 //-----------------------------//
@@ -119,8 +127,12 @@ int main(int argc, char** argv) {
     signal(SIGINT, sigintHandler);
     rclcpp::init(argc, argv);
 
-    auto AkulaNode = std::make_shared <AkulaMainNode>();
-    AkulaNode -> startLoop();
+    try {
+        auto ImuNode = std::make_shared <AkulaImuNode>();
+        ImuNode -> startLoop();
+    } catch (const std::exception& tExcept) {
+        std::cerr << tExcept.what() << std::endl;
+    }
 
     rclcpp::shutdown();
 

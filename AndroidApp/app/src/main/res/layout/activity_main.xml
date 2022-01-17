@@ -7,88 +7,206 @@
     android:background="@color/black"
     tools:context=".MainActivity">
 
-    <LinearLayout
-        android:layout_width="50dp"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="10dp"
+    <TableLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        app:layout_constraintEnd_toStartOf="@+id/indicatorLayout"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <com.example.androidapp.ConnIndicator
-            android:id="@+id/recordIndicator"
-            android:layout_width="50dp"
-            android:layout_height="50dp" />
-
-        <TextView
-            android:id="@+id/recordText"
-            android:layout_width="50dp"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="Rec."
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/indicatorLayout"
-        android:layout_width="110dp"
-        android:layout_height="70dp"
         android:layout_marginTop="60dp"
         android:layout_marginEnd="10dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
-            android:layout_width="50dp"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
 
-            <com.example.androidapp.ConnIndicator
-                android:id="@+id/serverIndicator"
+            <LinearLayout
                 android:layout_width="50dp"
-                android:layout_height="50dp" />
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/sensorsIndicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/sensorsText"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Rec."
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_marginStart="10dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/recordIndicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/recordText"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Sensor"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/serverIndicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/serverText"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="Server"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/stm32Indicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/stm32Text"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="STM32"
+                    android:textColor="#FFFFFF" />
+            </LinearLayout>
+        </TableRow>
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_span="4">
+
+                <Button
+                    android:id="@+id/sensorsButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="Start sensors"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/blue" />
+            </LinearLayout>
+        </TableRow>
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:layout_span="4">
+
+                <Button
+                    android:id="@+id/latbutton"
+                    android:layout_width="0dp"
+                    android:layout_weight="2"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:text="Latency"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/blue" />
+
+                <Button
+                    android:id="@+id/recordButton"
+                    android:layout_weight="2"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginStart="10dp"
+                    android:text="Record"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/blue" />
+            </LinearLayout>
+        </TableRow>
+    </TableLayout>
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout2"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <com.example.androidapp.Joystick
+            android:id="@+id/joystick"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
+
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginEnd="10dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
 
             <TextView
-                android:id="@+id/serverText"
-                android:layout_width="50dp"
+                android:id="@+id/latencyText"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="Server"
-                android:textColor="#FFFFFF" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="50dp"
-            android:layout_height="match_parent"
-            android:layout_marginStart="10dp"
-            android:orientation="vertical">
-
-            <com.example.androidapp.ConnIndicator
-                android:id="@+id/stm32Indicator"
-                android:layout_width="50dp"
-                android:layout_height="50dp" />
+                android:layout_gravity="left"
+                android:text="Latency: "
+                android:textColor="#FFFFFF"/>
 
             <TextView
-                android:id="@+id/stm32Text"
-                android:layout_width="50dp"
+                android:id="@+id/latencyValue"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="STM32"
+                android:layout_gravity="center_horizontal"
+                android:text="0.0"
                 android:textColor="#FFFFFF" />
-        </LinearLayout>
-
-    </LinearLayout>
-
+        </TableRow>
+    </TableLayout>
     <TableLayout
         android:layout_height="wrap_content"
         android:layout_width="110dp"
-        android:layout_marginTop="60dp"
+        android:layout_marginBottom="10dp"
         android:layout_marginStart="10dp"
         android:orientation="vertical"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <TableRow
             android:layout_width="fill_parent"
@@ -132,49 +250,6 @@
                 android:textColor="#FFFFFF"/>
         </TableRow>
     </TableLayout>
-
-    <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="110dp"
-        android:layout_height="70dp"
-        android:layout_marginEnd="10dp"
-        android:orientation="vertical"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/indicatorLayout">
-
-        <Button
-            android:id="@+id/latbutton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="Latency"
-            android:textColor="@color/white"
-            app:backgroundTint="@color/blue" />
-
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:text="0.0"
-            android:textColor="#FFFFFF" />
-    </LinearLayout>
-
-    <RelativeLayout
-        android:id="@+id/relativeLayout2"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="1:1"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <com.example.androidapp.Joystick
-            android:id="@+id/joystick"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </RelativeLayout>
 
     <com.example.androidapp.SlidePanel
         android:layout_width="match_parent"

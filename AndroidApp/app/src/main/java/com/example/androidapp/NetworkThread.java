@@ -49,6 +49,7 @@ class NetworkThread extends HandlerThread {
                         Bundle PingBund = tMsg.getData();
                         byte Stm32State = PingBund.getByte("stm32");
                         byte RecordState = PingBund.getByte("record");
+                        byte SensorState = PingBund.getByte("sensor");
 
                         Message StmMsg = mHandler.obtainMessage();
 
@@ -71,6 +72,18 @@ class NetworkThread extends HandlerThread {
                         }
 
                         mHandlerUI.sendMessage(RecordMsg);
+
+                        //----------//
+
+                        Message SensorMsg = mHandler.obtainMessage();
+
+                        if (RecordState == 0) {
+                            SensorMsg.what = Header.SENSOR_INACTIVE.getValue();
+                        } else {
+                            SensorMsg.what = Header.SENSOR_ACTIVE.getValue();
+                        }
+
+                        mHandlerUI.sendMessage(SensorMsg);
 
                         break;
                     case DISCONNECTED:
@@ -102,6 +115,18 @@ class NetworkThread extends HandlerThread {
                     case LATENCY:
                         if (mConnected) {
                             mClientUDP.sendLatencyTest();
+                        }
+
+                        break;
+                    case TOGGLE_RECORD:
+                        if (mConnected) {
+                            mClientUDP.sendRecordState();
+                        }
+
+                        break;
+                    case TOGGLE_SENSOR:
+                        if (mConnected) {
+                            mClientUDP.sendSensorState();
                         }
 
                         break;
@@ -196,6 +221,26 @@ class NetworkThread extends HandlerThread {
 
             if (Msg != null) {
                 Msg.what = Header.LATENCY.getValue();
+                mHandler.sendMessage(Msg);
+            }
+        }
+    }
+    void sendRecordState() {
+        if (mHandler != null) {
+            Message Msg = mHandler.obtainMessage();
+
+            if (Msg != null) {
+                Msg.what = Header.TOGGLE_RECORD.getValue();
+                mHandler.sendMessage(Msg);
+            }
+        }
+    }
+    void sendSensorState() {
+        if (mHandler != null) {
+            Message Msg = mHandler.obtainMessage();
+
+            if (Msg != null) {
+                Msg.what = Header.TOGGLE_SENSOR.getValue();
                 mHandler.sendMessage(Msg);
             }
         }

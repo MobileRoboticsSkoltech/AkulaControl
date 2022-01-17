@@ -95,7 +95,6 @@ void SerialMonitor::startSerialLoop() {
                         std::cout << "Request: skip" << std::endl;
                         break;
                     case PacketType::JOYSTICK_COORDS:
-                        std::cout << "Coord response!" << std::endl;
                         break;
                     case PacketType::ENCODER:
                     case PacketType::LATENCY:

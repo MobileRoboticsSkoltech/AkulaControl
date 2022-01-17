@@ -391,7 +391,6 @@ dSocketResult Server::smartphoneProcessCallback() {
                     memcpy(&PosY, Packet + 8, 4);
 
                     Pair = mMotorPWM -> getMotorsPWM(PosX, -PosY);
-                    std::cout << Pair.first << " : " << Pair.second << std::endl;
                     mMonitorSTM -> sendPWM(Pair.first, Pair.second);
 
                     break;
@@ -732,7 +731,7 @@ void Server::serialDataCallback() {
     std::unique_lock <std::mutex> Lock(mMessengerSTM -> mMutex);
     auto StmTag = SerialMonitor::PacketType::INVALID;
     auto SmartphoneTag = SmartphoneHeader::INVALID;
-    uint8_t Packet[mPacketSize];
+    auto Packet = new uint8_t[mPacketSize];
 
     while (!mTerminate.load() && mSerialActive.load()) {
         mMessengerSTM -> mDataCV.wait(Lock, [this] {
@@ -753,20 +752,19 @@ void Server::serialDataCallback() {
         } else if (StmTag == SerialMonitor::PacketType::ENCODER) {
             SmartphoneTag = SmartphoneHeader::ENCODER;
             memcpy(Packet, &SmartphoneTag, 4);
-            memcpy(Packet + 4, mMessengerSTM -> mBuffer + 4, 16);   //---Two double values for the left and the right encoders---//
 
-            double Left;
-            double Right;
-
-            memcpy(&Left, mMessengerSTM -> mBuffer + 4, 8);
-            memcpy(&Right, mMessengerSTM -> mBuffer + 12, 8);
-
+            memcpy(Packet + 4, mMessengerSTM -> mBuffer + 8, 16);   //---Two double values for the left and the right encoders---//
             fillSmartphoneWriteBuffer(Packet);
+
+            //----------//
+
+            memcpy(Packet + 4, mMessengerSTM -> mBuffer + 4, 20);
             fillSensorWriteBuffer(Packet);
-            std::cout << "Encoder data from STM32: " << Left << ", " << Right << std::endl;
         }
 
         mMessengerSTM -> mNewData.store(false);
         StmTag = SerialMonitor::PacketType::INVALID;
     }
+
+    delete[](Packet);
 }

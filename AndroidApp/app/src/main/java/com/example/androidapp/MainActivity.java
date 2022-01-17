@@ -61,6 +61,11 @@ public class MainActivity extends AppCompatActivity {
                         mStateRecordLED = false;
                     }
 
+                    if (mStateSensorLED) {
+                        mSensorLED.get().setConnectionState(false);
+                        mStateSensorLED = false;
+                    }
+
                     break;
                 case STM32_ONLINE:
                     if (!mStateStm32LED) {
@@ -87,6 +92,20 @@ public class MainActivity extends AppCompatActivity {
                     if (mStateRecordLED) {
                         mRecordLED.get().setConnectionState(false);
                         mStateRecordLED = false;
+                    }
+
+                    break;
+                case SENSOR_ACTIVE:
+                    if (!mStateSensorLED) {
+                        mSensorLED.get().setConnectionState(true);
+                        mStateSensorLED = true;
+                    }
+
+                    break;
+                case SENSOR_INACTIVE:
+                    if (mStateSensorLED) {
+                        mSensorLED.get().setConnectionState(false);
+                        mStateSensorLED = false;
                     }
 
                     break;
@@ -121,6 +140,9 @@ public class MainActivity extends AppCompatActivity {
         void setRecordLED(ConnIndicator tLED) {
             mRecordLED = new WeakReference <>(tLED);
         }
+        void setSensorLED(ConnIndicator tLED) {
+            mSensorLED = new WeakReference <>(tLED);
+        }
 
         void setLatencyText(TextView tView) {
             LatencyText = new WeakReference <>(tView);
@@ -143,6 +165,9 @@ public class MainActivity extends AppCompatActivity {
 
         private boolean mStateRecordLED = false;
         private WeakReference <ConnIndicator> mRecordLED;
+
+        private boolean mStateSensorLED = false;
+        private WeakReference <ConnIndicator> mSensorLED;
 
         private WeakReference <TextView> LatencyText;
 
@@ -202,6 +227,8 @@ public class MainActivity extends AppCompatActivity {
         EditText IpLine = findViewById(R.id.ipText);
         EditText PortLine = findViewById(R.id.portText);
         Button RequestButton = findViewById(R.id.requestButton);
+        Button SensorButton = findViewById(R.id.sensorsButton);
+        Button RecordButton = findViewById(R.id.recordButton);
         Button LatencyButton = findViewById(R.id.latbutton);
 
         SlidePanel SliderPanel = findViewById(R.id.sliderPanel);
@@ -219,11 +246,17 @@ public class MainActivity extends AppCompatActivity {
         RecordIndicator.setDisableColor(100, 0, 0);
         RecordIndicator.setBackgroundColor(50, 0, 0);
 
+        ConnIndicator SensorIndicator = findViewById(R.id.sensorsIndicator);
+        SensorIndicator.setEnableColor(0, 0, 200);
+        SensorIndicator.setDisableColor(0, 0, 100);
+        SensorIndicator.setBackgroundColor(0, 0, 50);
+
         mTestHandler.setLED(findViewById(R.id.serverIndicator));
         mTestHandler.setStmLED(StmIndicator);
         mTestHandler.setRecordLED(RecordIndicator);
+        mTestHandler.setSensorLED(SensorIndicator);
 
-        mTestHandler.setLatencyText(findViewById(R.id.textView2));
+        mTestHandler.setLatencyText(findViewById(R.id.latencyValue));
 
         mTestHandler.setLeftEncoderText(findViewById(R.id.leftEncoder));
         mTestHandler.setRightEncoderText(findViewById(R.id.rightEncoder));
@@ -260,6 +293,14 @@ public class MainActivity extends AppCompatActivity {
 
         LatencyButton.setOnClickListener(tView -> {
             mNetworkThread.sendLatencyTest();
+        });
+
+        SensorButton.setOnClickListener(tView -> {
+            mNetworkThread.sendRecordState();
+        });
+
+        SensorButton.setOnClickListener(tView -> {
+            mNetworkThread.sendSensorState();
         });
     }
     @Override

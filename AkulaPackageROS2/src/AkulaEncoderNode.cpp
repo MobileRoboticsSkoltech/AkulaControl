@@ -7,8 +7,16 @@
 #include "dSocket/dSocket.h"
 #include "akula_package/msg/encoders.hpp"
 //-----------------------------//
+/**
+ * This node gets encoder values from Akula desktop server via UDP socket
+ * and publishes the values to the <b>encoders</b> topic
+ */
 class AkulaEncoderNode : public rclcpp::Node {
 public:
+    /**
+     * Constructor creates publisher and sets up UDP socket for obtaining data from
+     * the desktop server
+     */
     AkulaEncoderNode() : Node("AkulaEncoderNode") {
         dSocketResult SocketRes;
 
@@ -51,9 +59,15 @@ public:
         }
     }
 
+    /**
+     * Main loop blocks on the <b>readUDP</b> function, obtains data and publishes it to
+     * the <b>encoders</b> topic
+     * @return Returns any occurred socket read errors
+     */
     dSocketResult startLoop() {
+        ///---TODO: move the size to a config---///
         size_t PacketSize = 32;
-        uint8_t Packet[PacketSize];
+        auto Packet = new uint8_t[PacketSize];
         sockaddr_in ClientAddr {};
         socklen_t ClientAddrLen = sizeof(ClientAddr);
         ssize_t ReadBytes;
@@ -74,6 +88,7 @@ public:
                         break;
                     default:
                         ///---TODO: skip some particular errors and terminate on others---///
+                        delete[](Packet);
                         return dSocketResult::READ_ERROR;
                 }
             }
@@ -85,12 +100,20 @@ public:
             }
 
             akula_package::msg::Encoders Msg;
+            uint32_t StmTime;
+            memcpy(&StmTime, Packet + 4, 4);
 
-            memcpy(&Msg.left, Packet + 4, 8);
-            memcpy(&Msg.right, Packet + 12, 8);
+            Msg.header.frame_id = "encoders";
+            Msg.header.stamp.sec = StmTime / 1000;
+            Msg.header.stamp.nanosec = StmTime % 1000 * 1000;
+
+            memcpy(&Msg.left, Packet + 8, 8);
+            memcpy(&Msg.right, Packet + 16, 8);
 
             mEncoders -> publish(Msg);
         }
+
+        delete[](Packet);
 
         return dSocketResult::SUCCESS;
     }
@@ -100,7 +123,7 @@ private:
 };
 //-----------------------------//
 void sigintHandler(int tSigNum) {
-    std::cout << "Receive signum: " << tSigNum << std::endl;
+    std::cout << "Received signum: " << tSigNum << std::endl;
     rclcpp::shutdown();
 }
 //-----------------------------//
@@ -108,8 +131,14 @@ int main(int argc, char ** argv) {
     signal(SIGINT, sigintHandler);
     rclcpp::init(argc, argv);
 
-    auto EncoderNode = std::make_shared <AkulaEncoderNode>();
-    EncoderNode -> startLoop();
+    try {
+        auto EncoderNode = std::make_shared <AkulaEncoderNode>();
+        if (EncoderNode -> startLoop() == dSocketResult::READ_ERROR) {
+            throw std::runtime_error("Read error!");
+        }
+    } catch (const std::exception& tExcept) {
+        std::cerr << tExcept.what() << std::endl;
+    }
 
     rclcpp::shutdown();
 
