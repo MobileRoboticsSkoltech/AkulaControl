@@ -29,10 +29,17 @@ Server::Server() {
 
     //----------//
 
-    mRecordCheckTimeoutMs           = Config["record_cmd"]["status_check_cd_ms"].as <uint32_t>();
-    mRecordStatusCmd                = Config["record_cmd"]["status"].as <std::string>();
-    mRecordStartCmd                 = Config["record_cmd"]["start"].as <std::string>();
-    mRecordStopCmd                  = Config["record_cmd"]["stop"].as <std::string>();
+    mSensorsRecordCheckTimeoutMs    = Config["sensors_record_cmd"]["status_check_cd_ms"].as <uint32_t>();
+    mSensorsRecordStatusCmd         = Config["sensors_record_cmd"]["status"].as <std::string>();
+    mSensorsRecordStartCmd          = Config["sensors_record_cmd"]["start"].as <std::string>();
+    mSensorsRecordStopCmd           = Config["sensors_record_cmd"]["stop"].as <std::string>();
+
+    //----------//
+
+    mSensorsLaunchCheckTimeoutMs    = Config["sensors_launch_cmd"]["status_check_cd_ms"].as <uint32_t>();
+    mSensorsLaunchStatusCmd         = Config["sensors_launch_cmd"]["status"].as <std::string>();
+    mSensorsLaunchStartCmd          = Config["sensors_launch_cmd"]["start"].as <std::string>();
+    mSensorsLaunchStopCmd           = Config["sensors_launch_cmd"]["stop"].as <std::string>();
 
     //----------//
 
@@ -616,10 +623,12 @@ ServerResult Server::timerCallback() {
             }
 
             uint8_t ActiveSTM = mSerialActive.load();
-            uint8_t ActiveRecording = mRecording.load();
+            uint8_t ActiveSensorRecording = mSensorsRecording.load();
+            uint8_t ActiveSensors = mSensorsActive.load();
 
             memcpy(Packet + 4, &ActiveSTM, 1);
-            memcpy(Packet + 5, &ActiveRecording, 1);
+            memcpy(Packet + 5, &ActiveSensorRecording, 1);
+            memcpy(Packet + 6, &ActiveSensors, 1);
 
             if (!fillSmartphoneWriteBuffer(Packet)) {
                 break;
@@ -628,27 +637,50 @@ ServerResult Server::timerCallback() {
 
         //----------//
 
-        ///---TODO: add bash command and status to the YAML config---///
-        Dur = std::chrono::system_clock::now() - mRecordLastCheckTime;
+        Dur = std::chrono::system_clock::now() - mSensorsRecordLastCheckTime;
 
-        if (Dur.count() * 1000 > mRecordCheckTimeoutMs) {
-            Stream = popen(mRecordStatusCmd.c_str(), "r");
+        if (Dur.count() * 1000 > mSensorsRecordCheckTimeoutMs) {
+            Stream = popen(mSensorsRecordStatusCmd.c_str(), "r");
 
             if (Stream != nullptr && fgets(StreamData, 128, Stream) != nullptr) {
                 if (std::strstr(StreamData, "running")) {
-                    mRecording.store(true);
+                    mSensorsRecording.store(true);
                 } else {
-                    mRecording.store(false);
+                    mSensorsRecording.store(false);
                 }
             } else {
-                mRecording.store(false);
+                mSensorsRecording.store(false);
             }
 
             if (pclose(Stream) == -1) {
                 std::cerr << "timerCallback: failed to close the stream!" << std::endl;
             }
 
-            mRecordLastCheckTime = std::chrono::system_clock::now();
+            mSensorsRecordLastCheckTime = std::chrono::system_clock::now();
+        }
+
+        //----------//
+
+        Dur = std::chrono::system_clock::now() - mSensorsLaunchLastCheckTime;
+
+        if (Dur.count() * 1000 > mSensorsLaunchCheckTimeoutMs) {
+            Stream = popen(mSensorsLaunchStatusCmd.c_str(), "r");
+
+            if (Stream != nullptr && fgets(StreamData, 128, Stream) != nullptr) {
+                if (std::strstr(StreamData, "running")) {
+                    mSensorsActive.store(true);
+                } else {
+                    mSensorsActive.store(false);
+                }
+            } else {
+                mSensorsActive.store(false);
+            }
+
+            if (pclose(Stream) == -1) {
+                std::cerr << "timerCallback: failed to close the stream!" << std::endl;
+            }
+
+            mSensorsLaunchLastCheckTime = std::chrono::system_clock::now();
         }
 
         //----------//

@@ -50,7 +50,8 @@ private:
     std::atomic_bool                            mTerminate                              = false;
     std::atomic_bool                            mConnected                              = false;
     std::atomic_bool                            mSerialActive                           = false;
-    std::atomic_bool                            mRecording                              = false;
+    std::atomic_bool                            mSensorsRecording                       = false;
+    std::atomic_bool                            mSensorsActive                          = false;
 
     std::chrono::system_clock::time_point       mSmartphoneLastPingTime                 = std::chrono::system_clock::now();
     uint32_t                                    mTimeoutMs                              = 0;
@@ -58,11 +59,19 @@ private:
 
     //----------//
 
-    uint32_t                                    mRecordCheckTimeoutMs                   = 0;
-    std::chrono::system_clock::time_point       mRecordLastCheckTime                    = std::chrono::system_clock::now();
-    std::string                                 mRecordStatusCmd;
-    std::string                                 mRecordStartCmd;
-    std::string                                 mRecordStopCmd;
+    uint32_t                                    mSensorsRecordCheckTimeoutMs            = 0;
+    std::chrono::system_clock::time_point       mSensorsRecordLastCheckTime             = std::chrono::system_clock::now();
+    std::string                                 mSensorsRecordStatusCmd;
+    std::string                                 mSensorsRecordStartCmd;
+    std::string                                 mSensorsRecordStopCmd;
+
+    //----------//
+
+    uint32_t                                    mSensorsLaunchCheckTimeoutMs            = 0;
+    std::chrono::system_clock::time_point       mSensorsLaunchLastCheckTime             = std::chrono::system_clock::now();
+    std::string                                 mSensorsLaunchStatusCmd;
+    std::string                                 mSensorsLaunchStartCmd;
+    std::string                                 mSensorsLaunchStopCmd;
 
     //----------//
 

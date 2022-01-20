@@ -1,0 +1,10 @@
+# akula_sensors_launcher.service
+
+[Unit] 
+Description=Akula sensors launcher
+Documentation=
+
+[Service] 
+Type=simple 
+
+ExecStart=/home/mrob/AkulaSensorsLauncher.sh

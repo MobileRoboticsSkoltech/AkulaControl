@@ -77,7 +77,7 @@ class NetworkThread extends HandlerThread {
 
                         Message SensorMsg = mHandler.obtainMessage();
 
-                        if (RecordState == 0) {
+                        if (SensorState == 0) {
                             SensorMsg.what = Header.SENSOR_INACTIVE.getValue();
                         } else {
                             SensorMsg.what = Header.SENSOR_ACTIVE.getValue();
@@ -119,12 +119,20 @@ class NetworkThread extends HandlerThread {
 
                         break;
                     case TOGGLE_RECORD:
+                        Message ToggleRecordMsg = mHandler.obtainMessage();
+                        ToggleRecordMsg.what = Header.TOGGLE_RECORD.getValue();
+                        mHandlerUI.sendMessage(ToggleRecordMsg);
+
                         if (mConnected) {
                             mClientUDP.sendRecordState();
                         }
 
                         break;
                     case TOGGLE_SENSOR:
+                        Message ToggleSensorsMsg = mHandler.obtainMessage();
+                        ToggleSensorsMsg.what = Header.TOGGLE_SENSOR.getValue();
+                        mHandlerUI.sendMessage(ToggleSensorsMsg);
+
                         if (mConnected) {
                             mClientUDP.sendSensorState();
                         }

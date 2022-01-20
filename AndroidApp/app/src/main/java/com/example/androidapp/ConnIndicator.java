@@ -72,7 +72,7 @@ public class ConnIndicator extends View {
      * Changing state leads to setting active/inactive status of the indicator
      * @param tState Activate the indicator
      */
-    void setConnectionState(boolean tState) {
+    void setEnableState(boolean tState) {
         mActive = tState;
         invalidate();
     }

@@ -26,26 +26,6 @@
                 android:orientation="vertical">
 
                 <com.example.androidapp.ConnIndicator
-                    android:id="@+id/sensorsIndicator"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp" />
-
-                <TextView
-                    android:id="@+id/sensorsText"
-                    android:layout_width="50dp"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:text="Rec."
-                    android:textColor="#FFFFFF" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="50dp"
-                android:layout_marginStart="10dp"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
-
-                <com.example.androidapp.ConnIndicator
                     android:id="@+id/recordIndicator"
                     android:layout_width="50dp"
                     android:layout_height="50dp" />
@@ -55,8 +35,28 @@
                     android:layout_width="50dp"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="Sensor"
-                    android:textColor="#FFFFFF" />
+                    android:text="@string/RecordTextLED"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_marginStart="10dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/sensorsIndicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/sensorsText"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/SensorTextLED"
+                    android:textColor="@color/white" />
             </LinearLayout>
 
             <LinearLayout
@@ -75,8 +75,8 @@
                     android:layout_width="50dp"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="Server"
-                    android:textColor="#FFFFFF" />
+                    android:text="@string/ServerTextLED"
+                    android:textColor="@color/white" />
             </LinearLayout>
 
             <LinearLayout
@@ -95,66 +95,50 @@
                     android:layout_width="50dp"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:text="STM32"
-                    android:textColor="#FFFFFF" />
+                    android:text="@string/Stm32TextLED"
+                    android:textColor="@color/white" />
             </LinearLayout>
         </TableRow>
         <TableRow
             android:layout_width="fill_parent"
             android:layout_height="wrap_content">
 
-            <LinearLayout
+            <Button
+                android:id="@+id/sensorsButton"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:layout_span="4">
-
-                <Button
-                    android:id="@+id/sensorsButton"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="Start sensors"
-                    android:textColor="@color/white"
-                    app:backgroundTint="@color/blue" />
-            </LinearLayout>
+                android:layout_height="wrap_content"
+                android:text="@string/SensorsButtonStart"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/blue"
+                android:layout_span="4" />
         </TableRow>
         <TableRow
             android:layout_width="fill_parent"
             android:layout_height="wrap_content">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal"
-                android:layout_span="4">
-
                 <Button
-                    android:id="@+id/latbutton"
-                    android:layout_width="0dp"
-                    android:layout_weight="2"
+                    android:id="@+id/latencyButton"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
-                    android:text="Latency"
+                    android:text="@string/LatencyButtonText"
                     android:textColor="@color/white"
-                    app:backgroundTint="@color/blue" />
+                    app:backgroundTint="@color/blue"
+                    android:layout_span="2"
+                    style="?android:attr/buttonBarButtonStyle" />
 
                 <Button
                     android:id="@+id/recordButton"
-                    android:layout_weight="2"
-                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center_horizontal"
                     android:layout_marginStart="10dp"
-                    android:text="Record"
+                    android:text="@string/RecordButtonStart"
                     android:textColor="@color/white"
-                    app:backgroundTint="@color/blue" />
-            </LinearLayout>
+                    app:backgroundTint="@color/blue"
+                    android:layout_span="2"
+                    style="?android:attr/buttonBarButtonStyle" />
         </TableRow>
     </TableLayout>
 
     <RelativeLayout
-        android:id="@+id/relativeLayout2"
+        android:id="@+id/joystickLayout"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -169,7 +153,7 @@
             android:layout_height="wrap_content" />
     </RelativeLayout>
 
-    <TableLayout
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="10dp"
@@ -178,27 +162,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
-        <TableRow
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content">
+        <TextView
+            android:id="@+id/latencyText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:text="@string/LatencyText"
+            android:textColor="@color/white"/>
 
-            <TextView
-                android:id="@+id/latencyText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:text="Latency: "
-                android:textColor="#FFFFFF"/>
-
-            <TextView
-                android:id="@+id/latencyValue"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:text="0.0"
-                android:textColor="#FFFFFF" />
-        </TableRow>
-    </TableLayout>
+        <TextView
+            android:id="@+id/latencyValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="@string/LatencyDefaultText"
+            android:textColor="@color/white" />
+    </LinearLayout>
     <TableLayout
         android:layout_height="wrap_content"
         android:layout_width="110dp"
@@ -216,17 +195,17 @@
                 android:id="@+id/leftEncoderText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:text="Left: "
-                android:textColor="#FFFFFF"/>
+                android:layout_gravity="start"
+                android:text="@string/LeftEncoderText"
+                android:textColor="@color/white"/>
 
             <TextView
                 android:id="@+id/leftEncoder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="right"
-                android:text="0.0"
-                android:textColor="#FFFFFF"/>
+                android:layout_gravity="end"
+                android:text="@string/LeftEncoderDefaultText"
+                android:textColor="@color/white"/>
         </TableRow>
 
         <TableRow
@@ -237,17 +216,17 @@
                 android:id="@+id/rightEncoderText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:text="Right: "
-                android:textColor="#FFFFFF"/>
+                android:layout_gravity="start"
+                android:text="@string/RightEncoderText"
+                android:textColor="@color/white"/>
 
             <TextView
                 android:id="@+id/rightEncoder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="right"
-                android:text="0.0"
-                android:textColor="#FFFFFF"/>
+                android:layout_gravity="end"
+                android:text="@string/RightEncoderDefaultText"
+                android:textColor="@color/white"/>
         </TableRow>
     </TableLayout>
 
@@ -279,7 +258,7 @@
             android:id="@+id/menuLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#2828BC"
+            android:background="@color/panelBackground"
             android:gravity="center"
             android:orientation="vertical"
             app:layout_constraintTop_toTopOf="parent"
@@ -291,9 +270,10 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:ems="10"
-                android:hint="IP address"
-                android:text="10.16.112.47"
-                android:inputType="textPersonName" />
+                android:hint="@string/IpHint"
+                android:text="@string/IpDefaultText"
+                android:inputType="textPersonName"
+                android:importantForAutofill="no"/>
 
             <EditText
                 android:id="@+id/portText"
@@ -301,9 +281,10 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:ems="10"
-                android:hint="Port"
-                android:text="50000"
-                android:inputType="textPersonName" />
+                android:hint="@string/PortHint"
+                android:text="@string/PortDefaultText"
+                android:inputType="textPersonName"
+                android:importantForAutofill="no"/>
 
             <Button
                 android:id="@+id/requestButton"
@@ -312,10 +293,7 @@
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                android:text="Request" />
+                android:text="@string/RequestButton" />
         </LinearLayout>
-
-
     </com.example.androidapp.SlidePanel>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

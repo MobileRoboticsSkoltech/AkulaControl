@@ -203,17 +203,13 @@ public class Client {
                     }
                 }
 
-                if (mTerminate.get()) {
-                    return;
-                }
-
                 if (mConnected.get()) {
                     synchronized (mTimerMonitor) {
                         mLastPacketTime = LocalTime.now();
                     }
                 }
 
-                if (!getWriteBuffer(Packet)) {
+                if (mTerminate.get() || !getWriteBuffer(Packet)) {
                     return;
                 }
 
@@ -238,7 +234,6 @@ public class Client {
     void processFunc() {
         byte[] Packet = new byte[mPacketSize];
         Header Tag;
-        int Counter = 0;
 
         while (!mTerminate.get()) {
             synchronized (mProcessMonitor) {
@@ -256,11 +251,7 @@ public class Client {
                     }
                 }
 
-                if (mTerminate.get()) {
-                    return;
-                }
-
-                if (!getReadBuffer(Packet)) {
+                if (mTerminate.get() || !getReadBuffer(Packet)) {
                     return;
                 }
 
@@ -270,9 +261,6 @@ public class Client {
                 Message Msg = mHandler.obtainMessage();
 
                 switch (Objects.requireNonNull(Tag)) {
-                    case REQUEST_CONN:
-                    case JOYSTICK_COORDS:
-                        break;
                     case PING:
                         if (!mConnected.get()) {
                             mConnected.set(true);
@@ -336,7 +324,8 @@ public class Client {
 
                         break;
                     case STATUS:
-                        break;
+                    case REQUEST_CONN:
+                    case JOYSTICK_COORDS:
                     case INVALID:
                 }
 

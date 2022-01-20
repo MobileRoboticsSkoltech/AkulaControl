@@ -1,0 +1,10 @@
+# akula_sensors_record.service
+
+[Unit] 
+Description=Akula sensors record
+Documentation=
+
+[Service] 
+Type=simple 
+
+ExecStart=/home/mrob/AkulaSensorsRecord.sh

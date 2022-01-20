@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
  * to safety reasons (control is lost otherwise)
  */
 public class MainActivity extends AppCompatActivity {
-    static class HandlerUI extends Handler {
+    class HandlerUI extends Handler {
         HandlerUI() {
             super(Looper.getMainLooper());
         }
@@ -40,81 +40,173 @@ public class MainActivity extends AppCompatActivity {
             switch (Header.fromInt(tMsg.what)) {
                 case PING:
                     if (!mStateServerLED) {
-                        mServerLED.get().setConnectionState(true);
+                        mServerLED.get().setEnableState(true);
                         mStateServerLED = true;
+                    }
+
+                    if (!mConnected) {
+                        mConnected = true;
+                    }
+
+                    if (!mLatencyButtonActive) {
+                        mLatencyButtonActive = true;
+                        mLatencyButton.get().setEnabled(true);
+                        mLatencyButton.get().setAlpha(1.0f);
+
                     }
 
                     break;
                 case DISCONNECTED:
                     if (mStateServerLED) {
-                        mServerLED.get().setConnectionState(false);
+                        mServerLED.get().setEnableState(false);
                         mStateServerLED = false;
                     }
 
                     if (mStateStm32LED) {
-                        mStm32LED.get().setConnectionState(false);
+                        mStm32LED.get().setEnableState(false);
                         mStateStm32LED = false;
                     }
 
                     if (mStateRecordLED) {
-                        mRecordLED.get().setConnectionState(false);
+                        mRecordLED.get().setEnableState(false);
                         mStateRecordLED = false;
                     }
 
                     if (mStateSensorLED) {
-                        mSensorLED.get().setConnectionState(false);
+                        mSensorLED.get().setEnableState(false);
                         mStateSensorLED = false;
                     }
+
+                    //----------//
+
+                    mSensorsButton.get().setEnabled(false);
+                    mRecordButton.get().setEnabled(false);
+                    mLatencyButton.get().setEnabled(false);
+
+                    mSensorsButton.get().setAlpha(0.5f);
+                    mRecordButton.get().setAlpha(0.5f);
+                    mLatencyButton.get().setAlpha(0.5f);
+
+                    mSensorsButtonActive = false;
+                    mRecordButtonActive = false;
+                    mLatencyButtonActive = false;
+
+                    //----------//
+
+                    mConnected = false;
 
                     break;
                 case STM32_ONLINE:
                     if (!mStateStm32LED) {
-                        mStm32LED.get().setConnectionState(true);
+                        mStm32LED.get().setEnableState(true);
                         mStateStm32LED = true;
                     }
 
                     break;
                 case STM32_DISCONNECTED:
                     if (mStateStm32LED) {
-                        mStm32LED.get().setConnectionState(false);
+                        mStm32LED.get().setEnableState(false);
                         mStateStm32LED = false;
                     }
 
                     break;
                 case RECORD_ACTIVE:
                     if (!mStateRecordLED) {
-                        mRecordLED.get().setConnectionState(true);
+                        mRecordLED.get().setEnableState(true);
                         mStateRecordLED = true;
+                    }
+
+                    if (mConnected) {
+                        if (!mRecordState && mRecordButton.get().getText() == getString(R.string.RecordButtonStart)) {
+                            mRecordButton.get().setText(R.string.RecordButtonStop);
+                            mRecordState = true;
+                        }
+
+                        if (!mRecordButtonActive) {
+                            mRecordButtonActive = true;
+                            mRecordButton.get().setAlpha(1.0f);
+                            mRecordButton.get().setEnabled(true);
+                        }
                     }
 
                     break;
                 case RECORD_INACTIVE:
                     if (mStateRecordLED) {
-                        mRecordLED.get().setConnectionState(false);
+                        mRecordLED.get().setEnableState(false);
                         mStateRecordLED = false;
+                    }
+
+                    if (mConnected) {
+                        if (mRecordState && mRecordButton.get().getText() == getString(R.string.RecordButtonStop)) {
+                            mRecordButton.get().setText(R.string.RecordButtonStart);
+                            mRecordState = false;
+                        }
+
+                        if (!mRecordButtonActive) {
+                            mRecordButtonActive = true;
+                            mRecordButton.get().setAlpha(1.0f);
+                            mRecordButton.get().setEnabled(true);
+                        }
                     }
 
                     break;
                 case SENSOR_ACTIVE:
                     if (!mStateSensorLED) {
-                        mSensorLED.get().setConnectionState(true);
+                        mSensorLED.get().setEnableState(true);
                         mStateSensorLED = true;
+                    }
+
+                    if (mConnected) {
+                        if (!mSensorsState && mSensorsButton.get().getText() == getString(R.string.SensorsButtonStart)) {
+                            mSensorsButton.get().setText(R.string.SensorsButtonStop);
+                            mSensorsState = true;
+                        }
+
+                        if (!mSensorsButtonActive) {
+                            mSensorsButtonActive = true;
+                            mSensorsButton.get().setAlpha(1.0f);
+                            mSensorsButton.get().setEnabled(true);
+                        }
+
                     }
 
                     break;
                 case SENSOR_INACTIVE:
                     if (mStateSensorLED) {
-                        mSensorLED.get().setConnectionState(false);
+                        mSensorLED.get().setEnableState(false);
                         mStateSensorLED = false;
                     }
+
+                    if (mConnected) {
+                        if (mSensorsState && mSensorsButton.get().getText() == getString(R.string.SensorsButtonStop)) {
+                            mSensorsButton.get().setText(R.string.SensorsButtonStart);
+                            mSensorsState = false;
+                        }
+
+                        if (!mSensorsButtonActive) {
+                            mSensorsButtonActive = true;
+                            mSensorsButton.get().setAlpha(1.0f);
+                            mSensorsButton.get().setEnabled(true);
+                        }
+                    }
+
+                    break;
+                case TOGGLE_RECORD:
+                    mRecordButtonActive = false;
+                    mRecordButton.get().setEnabled(false);
+                    mRecordButton.get().setAlpha(0.5f);
+
+                    break;
+                case TOGGLE_SENSOR:
+                    mSensorsButtonActive = false;
+                    mSensorsButton.get().setEnabled(false);
+                    mSensorsButton.get().setAlpha(0.5f);
 
                     break;
                 case LATENCY_RESPONSE:
                     Bundle Bund = tMsg.getData();
                     double Latency = Bund.getDouble("Latency");
                     LatencyText.get().setText(String.valueOf(Latency));
-
-                    System.out.println("Printed latency");
 
                     break;
                 case ENCODER:
@@ -125,13 +217,11 @@ public class MainActivity extends AppCompatActivity {
                     LeftEncoderText.get().setText(String.valueOf(LeftEncoder));
                     RightEncoderText.get().setText(String.valueOf(RightEncoder));
 
-                    System.out.println("Printed encoders");
-
                     break;
             }
         }
 
-        void setLED(ConnIndicator tLED) {
+        void setServerLED(ConnIndicator tLED) {
             mServerLED = new WeakReference <>(tLED);
         }
         void setStmLED(ConnIndicator tLED) {
@@ -143,6 +233,20 @@ public class MainActivity extends AppCompatActivity {
         void setSensorLED(ConnIndicator tLED) {
             mSensorLED = new WeakReference <>(tLED);
         }
+
+        //----------//
+
+        void setLatencyButton(Button tButton) {
+            mLatencyButton = new WeakReference <>(tButton);
+        }
+        void setRecordButton(Button tButton) {
+            mRecordButton = new WeakReference <>(tButton);
+        }
+        void setSensorsButton(Button tButton) {
+            mSensorsButton = new WeakReference <>(tButton);
+        }
+
+        //----------//
 
         void setLatencyText(TextView tView) {
             LatencyText = new WeakReference <>(tView);
@@ -157,22 +261,41 @@ public class MainActivity extends AppCompatActivity {
 
         //----------//
 
-        private boolean mStateServerLED = false;
-        private WeakReference <ConnIndicator> mServerLED;
+        private boolean                         mConnected              = false;
 
-        private boolean mStateStm32LED = false;
-        private WeakReference <ConnIndicator> mStm32LED;
+        //----------//
 
-        private boolean mStateRecordLED = false;
-        private WeakReference <ConnIndicator> mRecordLED;
+        private boolean                         mStateServerLED         = false;
+        private WeakReference <ConnIndicator>   mServerLED;
 
-        private boolean mStateSensorLED = false;
-        private WeakReference <ConnIndicator> mSensorLED;
+        private boolean                         mStateStm32LED          = false;
+        private WeakReference <ConnIndicator>   mStm32LED;
 
-        private WeakReference <TextView> LatencyText;
+        private boolean                         mStateRecordLED         = false;
+        private WeakReference <ConnIndicator>   mRecordLED;
 
-        private WeakReference <TextView> LeftEncoderText;
-        private WeakReference <TextView> RightEncoderText;
+        private boolean                         mStateSensorLED         = false;
+        private WeakReference <ConnIndicator>   mSensorLED;
+
+        //----------//
+
+        private boolean                         mLatencyButtonActive    = false;
+        private WeakReference <Button>          mLatencyButton;
+
+        private boolean                         mRecordButtonActive     = false;
+        private boolean                         mRecordState            = false;
+        private WeakReference <Button>          mRecordButton;
+
+        private boolean                         mSensorsButtonActive    = false;
+        private boolean                         mSensorsState           = false;
+        private WeakReference <Button>          mSensorsButton;
+
+        //----------//
+
+        private WeakReference <TextView>        LatencyText;
+
+        private WeakReference <TextView>        LeftEncoderText;
+        private WeakReference <TextView>        RightEncoderText;
     }
 
     //----------//
@@ -227,9 +350,22 @@ public class MainActivity extends AppCompatActivity {
         EditText IpLine = findViewById(R.id.ipText);
         EditText PortLine = findViewById(R.id.portText);
         Button RequestButton = findViewById(R.id.requestButton);
+
+        //----------//
+
         Button SensorButton = findViewById(R.id.sensorsButton);
         Button RecordButton = findViewById(R.id.recordButton);
-        Button LatencyButton = findViewById(R.id.latbutton);
+        Button LatencyButton = findViewById(R.id.latencyButton);
+
+        SensorButton.setEnabled(false);
+        RecordButton.setEnabled(false);
+        LatencyButton.setEnabled(false);
+
+        SensorButton.setAlpha(0.5f);
+        RecordButton.setAlpha(0.5f);
+        LatencyButton.setAlpha(0.5f);
+
+        //----------//
 
         SlidePanel SliderPanel = findViewById(R.id.sliderPanel);
 
@@ -251,15 +387,19 @@ public class MainActivity extends AppCompatActivity {
         SensorIndicator.setDisableColor(0, 0, 100);
         SensorIndicator.setBackgroundColor(0, 0, 50);
 
-        mTestHandler.setLED(findViewById(R.id.serverIndicator));
-        mTestHandler.setStmLED(StmIndicator);
-        mTestHandler.setRecordLED(RecordIndicator);
-        mTestHandler.setSensorLED(SensorIndicator);
+        mHandler.setServerLED(findViewById(R.id.serverIndicator));
+        mHandler.setStmLED(StmIndicator);
+        mHandler.setRecordLED(RecordIndicator);
+        mHandler.setSensorLED(SensorIndicator);
 
-        mTestHandler.setLatencyText(findViewById(R.id.latencyValue));
+        mHandler.setLatencyButton(LatencyButton);
+        mHandler.setRecordButton(RecordButton);
+        mHandler.setSensorsButton(SensorButton);
 
-        mTestHandler.setLeftEncoderText(findViewById(R.id.leftEncoder));
-        mTestHandler.setRightEncoderText(findViewById(R.id.rightEncoder));
+        mHandler.setLatencyText(findViewById(R.id.latencyValue));
+
+        mHandler.setLeftEncoderText(findViewById(R.id.leftEncoder));
+        mHandler.setRightEncoderText(findViewById(R.id.rightEncoder));
 
         RequestButton.setOnClickListener(tView -> {
             IpLine.clearFocus();
@@ -295,7 +435,7 @@ public class MainActivity extends AppCompatActivity {
             mNetworkThread.sendLatencyTest();
         });
 
-        SensorButton.setOnClickListener(tView -> {
+        RecordButton.setOnClickListener(tView -> {
             mNetworkThread.sendRecordState();
         });
 
@@ -307,13 +447,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        mNetworkThread = new NetworkThread(mTestHandler);
+        mNetworkThread = new NetworkThread(mHandler);
         mNetworkThread.start();
     }
 
     //----------//
 
-    HandlerUI       mTestHandler        = new HandlerUI();
+    HandlerUI       mHandler            = new HandlerUI();
     NetworkThread   mNetworkThread;
 }
 
