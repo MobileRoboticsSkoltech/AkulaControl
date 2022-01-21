@@ -32,11 +32,15 @@ class NetworkThread extends HandlerThread {
             public void handleMessage(Message tMsg) {
                 super.handleMessage(tMsg);
                 Message Msg = mHandler.obtainMessage();
+                Header MsgHeader = Header.fromInt(tMsg.what);
 
-                switch (Header.fromInt(tMsg.what)) {
+                if (MsgHeader == null) {
+                    return;
+                }
+
+                switch (MsgHeader) {
                     case REQUEST_CONN:
                         mClientUDP.sendRequest();
-
                         break;
                     case PING:
                         if (!mConnected) {

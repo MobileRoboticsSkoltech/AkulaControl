@@ -419,6 +419,23 @@ dSocketResult Server::smartphoneProcessCallback() {
 
                     break;
                 case SmartphoneHeader::DISCONNECTED:
+                case SmartphoneHeader::ENCODER:
+                    break;
+                case SmartphoneHeader::TOGGLE_RECORD:
+                    if (mSensorsRecording.load()) {
+                        system(mSensorsRecordStopCmd.c_str());
+                    } else {
+                        system(mSensorsRecordStartCmd.c_str());
+                    }
+
+                    break;
+                case SmartphoneHeader::TOGGLE_SENSOR:
+                    if (mSensorsActive.load()) {
+                        system(mSensorsLaunchStopCmd.c_str());
+                    } else {
+                        system(mSensorsLaunchStartCmd.c_str());
+                    }
+
                     break;
             }
 

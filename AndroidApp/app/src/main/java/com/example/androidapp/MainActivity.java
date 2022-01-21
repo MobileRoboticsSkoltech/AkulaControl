@@ -48,13 +48,6 @@ public class MainActivity extends AppCompatActivity {
                         mConnected = true;
                     }
 
-                    if (!mLatencyButtonActive) {
-                        mLatencyButtonActive = true;
-                        mLatencyButton.get().setEnabled(true);
-                        mLatencyButton.get().setAlpha(1.0f);
-
-                    }
-
                     break;
                 case DISCONNECTED:
                     if (mStateServerLED) {
@@ -102,11 +95,23 @@ public class MainActivity extends AppCompatActivity {
                         mStateStm32LED = true;
                     }
 
+                    if (!mLatencyButtonActive) {
+                        mLatencyButtonActive = true;
+                        mLatencyButton.get().setEnabled(true);
+                        mLatencyButton.get().setAlpha(1.0f);
+                    }
+
                     break;
                 case STM32_DISCONNECTED:
                     if (mStateStm32LED) {
                         mStm32LED.get().setEnableState(false);
                         mStateStm32LED = false;
+                    }
+
+                    if (mLatencyButtonActive) {
+                        mLatencyButtonActive = false;
+                        mLatencyButton.get().setEnabled(false);
+                        mLatencyButton.get().setAlpha(0.5f);
                     }
 
                     break;

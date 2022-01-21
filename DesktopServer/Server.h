@@ -19,14 +19,16 @@
 #include "MotorPWM.h"
 //-----------------------------//
 enum class SmartphoneHeader {
-    REQUEST_CONN,
-    JOYSTICK_COORDS,
-    PING,
-    STATUS,
-    INVALID,
-    DISCONNECTED,
-    LATENCY,
-    ENCODER
+    REQUEST_CONN        = 0x0000AAAA,
+    JOYSTICK_COORDS     = 0x0000AAAB,
+    PING                = 0x0000AAAC,
+    STATUS              = 0x0000AAAD,
+    DISCONNECTED        = 0x0000AAAE,
+    LATENCY             = 0x0000AAAF,
+    ENCODER             = 0x0000AABA,
+    TOGGLE_RECORD       = 0x0000AACC,
+    TOGGLE_SENSOR       = 0x0000AACD,
+    INVALID             = 0x0000FFFF
 };
 enum class ServerResult {
     SUCCESS,
