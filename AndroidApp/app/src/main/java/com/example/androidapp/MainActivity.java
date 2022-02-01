@@ -216,8 +216,8 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case ENCODER:
                     Bundle EncoderBund = tMsg.getData();
-                    double LeftEncoder = EncoderBund.getDouble("LeftEncoder");
-                    double RightEncoder = EncoderBund.getDouble("RightEncoder");
+                    long LeftEncoder = EncoderBund.getLong("LeftEncoder");
+                    long RightEncoder = EncoderBund.getLong("RightEncoder");
 
                     LeftEncoderText.get().setText(String.valueOf(LeftEncoder));
                     RightEncoderText.get().setText(String.valueOf(RightEncoder));
@@ -388,9 +388,9 @@ public class MainActivity extends AppCompatActivity {
         RecordIndicator.setBackgroundColor(50, 0, 0);
 
         ConnIndicator SensorIndicator = findViewById(R.id.sensorsIndicator);
-        SensorIndicator.setEnableColor(0, 0, 200);
-        SensorIndicator.setDisableColor(0, 0, 100);
-        SensorIndicator.setBackgroundColor(0, 0, 50);
+        SensorIndicator.setEnableColor(0, 0, 255);
+        SensorIndicator.setDisableColor(0, 0, 150);
+        SensorIndicator.setBackgroundColor(0, 0, 70);
 
         mHandler.setServerLED(findViewById(R.id.serverIndicator));
         mHandler.setStmLED(StmIndicator);

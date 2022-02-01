@@ -57,68 +57,6 @@ static void MX_TIM3_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
-    if (htim == &htim2) {
-        if (htim -> Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-            if (gFirstCapturedLeft == false) {
-                gFirstValLeft = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // read the first value
-                gFirstCapturedLeft = true;  // set the first captured as true
-            } else {
-                gSecondValLeft = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);  // read second value
-
-                if (gSecondValLeft > gFirstValLeft) {
-                    gSignalDiffLeft = gSecondValLeft - gFirstValLeft;
-                } else if (gFirstValLeft > gSecondValLeft) {
-                    gSignalDiffLeft = (0xffffffff - gFirstValLeft) + gSecondValLeft;
-                }
-
-                double ReferenceClock = (double)ENCODER_FREQ / ENCODER_PRESCALER;
-
-                gFrequencyLeft = ReferenceClock / (double)gSignalDiffLeft;
-
-                __HAL_TIM_SET_COUNTER(htim, 0);  // reset the counter
-                gFirstCapturedLeft = false; // set it back to false
-            }
-        }
-    } else if (htim == &htim5) {
-        if (htim -> Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-            if (gFirstCapturedRight == false) {
-                gFirstValRight = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // read the first value
-                gFirstCapturedRight = true;  // set the first captured as true
-            } else {
-                gSecondValRight = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);  // read second value
-
-                if (gSecondValRight > gFirstValRight) {
-                    gSignalDiffRight = gSecondValRight - gFirstValRight;
-                } else if (gFirstValRight > gSecondValRight) {
-                    gSignalDiffRight = (0xffffffff - gFirstValRight) + gSecondValRight;
-                }
-
-                double ReferenceClock = (double) ENCODER_FREQ / ENCODER_PRESCALER;
-
-                gFrequencyRight = ReferenceClock / (double)gSignalDiffRight;
-
-                __HAL_TIM_SET_COUNTER(htim, 0);  // reset the counter
-                gFirstCapturedRight = false; // set it back to false
-            }
-        }
-    }
-
-    gSendEncoderCounter++;
-
-    if (gSendEncoderCounter % 100 == 0) {
-        uint32_t WriteTag = ENCODER;
-        uint8_t SendResult;
-
-        memcpy(WriteBuffer, &WriteTag, 4);
-        memcpy(WriteBuffer + 4, &gFrequencyLeft, 8);
-        memcpy(WriteBuffer + 12, &gFrequencyRight, 8);
-
-        do {
-            SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-        } while (SendResult == USBD_BUSY);
-    }
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -166,9 +104,6 @@ int main(void)
 
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
-
-//    HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
-//    HAL_TIM_IC_Start_IT(&htim5, TIM_CHANNEL_1);
 
     HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
     HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
@@ -354,13 +289,13 @@ int main(void)
 
                 WriteTag = ENCODER;
 
-                gFrequencyLeft = TIM2->CNT;
-                gFrequencyRight = TIM5->CNT;
+                gEncoderLeft = TIM2 -> CNT;
+                gEncoderRight = TIM5 -> CNT;
 
                 memcpy(WriteBuffer, &WriteTag, 4);
                 memcpy(WriteBuffer + 4, &LastEncoderTime, 4);
-                memcpy(WriteBuffer + 8, &gFrequencyLeft, 8);
-                memcpy(WriteBuffer + 16, &gFrequencyRight, 8);
+                memcpy(WriteBuffer + 8, &gEncoderLeft, 4);
+                memcpy(WriteBuffer + 12, &gEncoderRight, 4);
 
                 do {
                     SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
@@ -438,20 +373,20 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 1000-1;
+  htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 0xffff;
+  htim2.Init.Period = 0xffffffff;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 15;
-  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_FALLING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 15;
+  sConfig.IC2Filter = 0;
   if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
   {
     Error_Handler();
@@ -550,20 +485,20 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 1 */
   htim5.Instance = TIM5;
-  htim5.Init.Prescaler = 1000-1;
+  htim5.Init.Prescaler = 0;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 0xffff;
+  htim5.Init.Period = 0xffffffff;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC1Filter = 15;
-  sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_FALLING;
   sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-  sConfig.IC2Filter = 15;
+  sConfig.IC2Filter = 0;
   if (HAL_TIM_Encoder_Init(&htim5, &sConfig) != HAL_OK)
   {
     Error_Handler();

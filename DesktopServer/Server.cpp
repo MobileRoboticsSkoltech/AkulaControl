@@ -802,12 +802,12 @@ void Server::serialDataCallback() {
             SmartphoneTag = SmartphoneHeader::ENCODER;
             memcpy(Packet, &SmartphoneTag, 4);
 
-            memcpy(Packet + 4, mMessengerSTM -> mBuffer + 8, 16);   //---Two double values for the left and the right encoders---//
+            memcpy(Packet + 4, mMessengerSTM -> mBuffer + 8, 8);   //---Two uint32_t values for the left and the right encoders---//
             fillSmartphoneWriteBuffer(Packet);
 
             //----------//
 
-            memcpy(Packet + 4, mMessengerSTM -> mBuffer + 4, 20);
+            memcpy(Packet + 4, mMessengerSTM -> mBuffer + 4, 12);   //---Two uint32_t values for the left and the right encoders and STM32 time---//
             fillSensorWriteBuffer(Packet);
         }
 

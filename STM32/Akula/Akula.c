@@ -29,8 +29,8 @@ uint32_t gFirstValRight         = 0;
 uint32_t gSecondValLeft         = 0;
 uint32_t gSecondValRight        = 0;
 
-double gFrequencyLeft           = 0.0;
-double gFrequencyRight          = 0.0;
+uint32_t gEncoderLeft           = 0;
+uint32_t gEncoderRight          = 0;
 
 uint32_t gSendEncoderCounter    = 0;
 //-----------------------------//

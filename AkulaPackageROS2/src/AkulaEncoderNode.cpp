@@ -107,8 +107,8 @@ public:
             Msg.header.stamp.sec = StmTime / 1000;
             Msg.header.stamp.nanosec = StmTime % 1000 * 1000;
 
-            memcpy(&Msg.left, Packet + 8, 8);
-            memcpy(&Msg.right, Packet + 16, 8);
+            memcpy(&Msg.left, Packet + 8, 4);
+            memcpy(&Msg.right, Packet + 12, 4);
 
             mEncoders -> publish(Msg);
         }

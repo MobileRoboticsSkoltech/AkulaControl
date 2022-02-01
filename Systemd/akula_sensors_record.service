@@ -5,6 +5,5 @@ Description=Akula sensors record
 Documentation=
 
 [Service] 
-Type=simple 
-
+Type=simple
 ExecStart=/home/mrob/AkulaSensorsRecord.sh

@@ -6,6 +6,8 @@ import android.os.HandlerThread;
 import android.os.Message;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 //-----------------------------//
@@ -102,14 +104,11 @@ class NetworkThread extends HandlerThread {
                             Bundle Bund = tMsg.getData();
                             float[] Coords = Bund.getFloatArray("Coords");
 
-                            mClientUDP.sendCoords(Coords[0], Coords[1]);
-
                             mCoordsObtainState = false;
 
-                            try {
-                                Thread.sleep(20);
-                            } catch (InterruptedException tExcept) {
-                                tExcept.printStackTrace();
+                            if (Duration.between(mLastCoordTime, LocalTime.now()).toMillis() > mTimeoutMs || Coords[0] == 0 && Coords[1] == 0) {
+                                mLastCoordTime = LocalTime.now();
+                                mClientUDP.sendCoords(Coords[0], Coords[1]);
                             }
 
                             mCoordsObtainState = true;
@@ -266,4 +265,7 @@ class NetworkThread extends HandlerThread {
 
     private boolean                             mConnected              = false;
     private boolean                             mCoordsObtainState      = true;
+
+    LocalTime                                   mLastCoordTime          = LocalTime.now();
+    int                                         mTimeoutMs              = 50;
 }

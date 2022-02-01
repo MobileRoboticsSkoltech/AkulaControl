@@ -59,8 +59,8 @@ extern uint32_t gFirstValRight;
 extern uint32_t gSecondValLeft;
 extern uint32_t gSecondValRight;
 
-extern double gFrequencyLeft;
-extern double gFrequencyRight;
+extern uint32_t gEncoderLeft;
+extern uint32_t gEncoderRight;
 
 extern uint32_t gSendEncoderCounter;
 //-----------------------------//

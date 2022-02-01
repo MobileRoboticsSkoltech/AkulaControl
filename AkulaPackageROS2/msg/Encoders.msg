@@ -1,3 +1,3 @@
 std_msgs/Header header
-float64 left
-float64 right
+uint32 left
+uint32 right

@@ -6,5 +6,4 @@ Documentation=
 
 [Service] 
 Type=simple 
-
 ExecStart=/home/mrob/AkulaSensorsLauncher.sh

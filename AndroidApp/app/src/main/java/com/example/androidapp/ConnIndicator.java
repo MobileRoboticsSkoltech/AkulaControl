@@ -35,7 +35,7 @@ public class ConnIndicator extends View {
 
         tCanvas.drawColor(Color.BLACK);
 
-        mColors.setARGB(255, mBackgroundColor[0], mBackgroundColor[1], mBackgroundColor[0]);
+        mColors.setARGB(255, mBackgroundColor[0], mBackgroundColor[1], mBackgroundColor[2]);
         tCanvas.drawCircle((float)getWidth() / 2, (float)getHeight() / 2, 50.0f, mColors);
 
         if (mActive) {

@@ -180,7 +180,7 @@
     </LinearLayout>
     <TableLayout
         android:layout_height="wrap_content"
-        android:layout_width="110dp"
+        android:layout_width="200dp"
         android:layout_marginBottom="10dp"
         android:layout_marginStart="10dp"
         android:orientation="vertical"

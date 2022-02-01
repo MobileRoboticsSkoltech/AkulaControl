@@ -310,13 +310,11 @@ public class Client {
                     case ENCODER:
                         Bundle EncoderBund = new Bundle(2);
 
-                        long LongBits = Double.doubleToLongBits(Buffer.getDouble());
-                        LongBits = Long.reverseBytes(LongBits);
-                        EncoderBund.putDouble("LeftEncoder", Double.longBitsToDouble(LongBits));
+                        long Value = Integer.toUnsignedLong(Integer.reverseBytes(Buffer.getInt()));
+                        EncoderBund.putLong("LeftEncoder", Value);
 
-                        LongBits = Double.doubleToLongBits(Buffer.getDouble());
-                        LongBits = Long.reverseBytes(LongBits);
-                        EncoderBund.putDouble("RightEncoder", Double.longBitsToDouble(LongBits));
+                        Value = Integer.toUnsignedLong(Integer.reverseBytes(Buffer.getInt()));
+                        EncoderBund.putLong("RightEncoder", Value);
 
                         Msg.setData(EncoderBund);
                         Msg.what = Header.ENCODER.getValue();
@@ -466,7 +464,6 @@ public class Client {
     void timerFunc() {
         while (true) {
             synchronized (mTimerMonitor) {
-
                 if (mConnected.get() && Duration.between(mLastPacketTime, LocalTime.now()).toMillis() > mTimeoutMs) {
                     mConnected.set(false);
                     close();
