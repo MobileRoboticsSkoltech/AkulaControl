@@ -13,7 +13,7 @@ struct SerialMessenger {
     std::condition_variable     mDataCV;
     std::atomic_bool            mNewData        = false;
     std::mutex                  mMutex;
-    uint32_t                    mBuffer[32];
+    uint8_t*                    mBuffer         = nullptr;
 };
 //-----------------------------//
 ///---TODO: maybe it's better to clear read buffer before processing packet---///
@@ -41,7 +41,12 @@ public:
 
     //----------//
 
-    SerialMonitor(const std::string& tSerialPath, size_t tPacketSize, SerialMessenger* tMessenger);
+    SerialMonitor(      const std::string& tSerialPath,
+                        size_t tPacketSize,
+                        SerialMessenger* tMessenger,
+                        uint32_t tSerialTimeoutMs,
+                        uint32_t tTimerSleepIntervalMs,
+                        uint32_t tPingIntervalMs);
     ~SerialMonitor();
 
     //----------//
@@ -64,19 +69,21 @@ private:
 
     ///---TODO: change future return value---///
     std::future <void>                          mTimerThread;
-    uint32_t                                    mTimerSleepIntervalMs       = 200;
+    uint32_t                                    mTimerSleepIntervalMs       = 0;
+    uint32_t                                    mSerialTimeout              = 0;
 
     uint8_t*                                    mReadBuffer                 = nullptr;
     uint8_t*                                    mWriteBuffer                = nullptr;
 
     size_t                                      mPacketSize                 = 0;
+    std::string                                 mSerialPath;
 
     std::atomic_bool                            mRunning                    = false;
     std::atomic_bool                            mConnected                  = false;
 
     std::chrono::system_clock::time_point       mLastPing;
     std::chrono::duration <double>              mPingDuration               = {};
-    uint32_t                                    mPingIntervalMs             = 1000;
+    uint32_t                                    mPingIntervalMs             = 0;
 
     //----------//
 

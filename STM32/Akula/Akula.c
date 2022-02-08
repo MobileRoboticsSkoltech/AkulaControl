@@ -12,10 +12,27 @@ RingBuffer gReceiveBuffer = {
 uint8_t ReadBuffer[PACKET_SIZE];
 uint8_t WriteBuffer[PACKET_SIZE];
 
-int gConnected      = 0;
-int gRunning        = 1;
+int gConnected                  = 0;
+int gRunning                    = 1;
 
-uint32_t TimeoutMs  = 5000;
+uint32_t TimeoutMs              = 5000;
+
+uint32_t gSignalDiffLeft        = 0;
+uint32_t gSignalDiffRight       = 0;
+
+bool gFirstCapturedLeft         = false;
+bool gFirstCapturedRight        = false;
+
+uint32_t gFirstValLeft          = 0;
+uint32_t gFirstValRight         = 0;
+
+uint32_t gSecondValLeft         = 0;
+uint32_t gSecondValRight        = 0;
+
+uint32_t gEncoderLeft           = 0;
+uint32_t gEncoderRight          = 0;
+
+uint32_t gSendEncoderCounter    = 0;
 //-----------------------------//
 /**
  * @description

@@ -7,26 +7,138 @@
     android:background="@color/black"
     tools:context=".MainActivity">
 
-    <RelativeLayout
-        android:id="@+id/relativeLayout"
-        android:layout_width="50dp"
-        android:layout_height="0dp"
+    <TableLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="60dp"
         android:layout_marginEnd="10dp"
-        app:layout_constraintDimensionRatio="1:1"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.example.androidapp.ConnIndicator
-            android:id="@+id/connIndicator"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            tools:layout_editor_absoluteX="-55dp"
-            tools:layout_editor_absoluteY="-140dp" />
-    </RelativeLayout>
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/recordIndicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/recordText"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/RecordTextLED"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_marginStart="10dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/sensorsIndicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/sensorsText"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/SensorTextLED"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/serverIndicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/serverText"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/ServerTextLED"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="50dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="10dp"
+                android:orientation="vertical">
+
+                <com.example.androidapp.ConnIndicator
+                    android:id="@+id/stm32Indicator"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp" />
+
+                <TextView
+                    android:id="@+id/stm32Text"
+                    android:layout_width="50dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:text="@string/Stm32TextLED"
+                    android:textColor="@color/white" />
+            </LinearLayout>
+        </TableRow>
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/sensorsButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/SensorsButtonStart"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/blue"
+                android:layout_span="4" />
+        </TableRow>
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+                <Button
+                    android:id="@+id/latencyButton"
+                    android:layout_height="wrap_content"
+                    android:text="@string/LatencyButtonText"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/blue"
+                    android:layout_span="2"
+                    style="?android:attr/buttonBarButtonStyle" />
+
+                <Button
+                    android:id="@+id/recordButton"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:text="@string/RecordButtonStart"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/blue"
+                    android:layout_span="2"
+                    style="?android:attr/buttonBarButtonStyle" />
+        </TableRow>
+    </TableLayout>
 
     <RelativeLayout
-        android:id="@+id/relativeLayout2"
+        android:id="@+id/joystickLayout"
         android:layout_width="wrap_content"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -39,23 +151,84 @@
             android:id="@+id/joystick"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:layout_marginEnd="10dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <TextView
-            android:id="@+id/textView2"
+            android:id="@+id/latencyText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:text="TextView"
-            android:textColor="#FFFFFF"/>
+            android:layout_gravity="start"
+            android:text="@string/LatencyText"
+            android:textColor="@color/white"/>
 
-        <Button
-            android:id="@+id/latbutton"
+        <TextView
+            android:id="@+id/latencyValue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentBottom="true"
-            android:text="Latency" />
-    </RelativeLayout>
+            android:layout_gravity="center_horizontal"
+            android:text="@string/LatencyDefaultText"
+            android:textColor="@color/white" />
+    </LinearLayout>
+    <TableLayout
+        android:layout_height="wrap_content"
+        android:layout_width="200dp"
+        android:layout_marginBottom="10dp"
+        android:layout_marginStart="10dp"
+        android:orientation="vertical"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/leftEncoderText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:text="@string/LeftEncoderText"
+                android:textColor="@color/white"/>
+
+            <TextView
+                android:id="@+id/leftEncoder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="@string/LeftEncoderDefaultText"
+                android:textColor="@color/white"/>
+        </TableRow>
+
+        <TableRow
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/rightEncoderText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:text="@string/RightEncoderText"
+                android:textColor="@color/white"/>
+
+            <TextView
+                android:id="@+id/rightEncoder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:text="@string/RightEncoderDefaultText"
+                android:textColor="@color/white"/>
+        </TableRow>
+    </TableLayout>
 
     <com.example.androidapp.SlidePanel
         android:layout_width="match_parent"
@@ -69,11 +242,12 @@
             style="@style/Widget.AppCompat.Button"
             android:layout_width="match_parent"
             android:layout_height="50dp"
-            android:background="@drawable/open_menu_button"
+            android:background="@color/blue"
             android:insetTop="0dp"
             android:insetBottom="0dp"
             app:backgroundTint="@null"
             app:icon="@android:drawable/arrow_down_float"
+            app:iconTint="@color/white"
             app:iconGravity="textStart"
             app:iconPadding="0dp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -84,7 +258,7 @@
             android:id="@+id/menuLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#2828BC"
+            android:background="@color/panelBackground"
             android:gravity="center"
             android:orientation="vertical"
             app:layout_constraintTop_toTopOf="parent"
@@ -96,9 +270,10 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:ems="10"
-                android:hint="IP address"
-                android:text="10.16.112.47"
-                android:inputType="textPersonName" />
+                android:hint="@string/IpHint"
+                android:text="@string/IpDefaultText"
+                android:inputType="textPersonName"
+                android:importantForAutofill="no"/>
 
             <EditText
                 android:id="@+id/portText"
@@ -106,20 +281,19 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:ems="10"
-                android:hint="Port"
-                android:text="50000"
-                android:inputType="textPersonName" />
+                android:hint="@string/PortHint"
+                android:text="@string/PortDefaultText"
+                android:inputType="textPersonName"
+                android:importantForAutofill="no"/>
 
             <Button
                 android:id="@+id/requestButton"
+                app:backgroundTint="@color/dark_blue"
+                android:textColor="@color/white"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
-                android:background="@drawable/request_button"
-                android:text="Request"
-                app:backgroundTint="@null" />
+                android:text="@string/RequestButton" />
         </LinearLayout>
-
     </com.example.androidapp.SlidePanel>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

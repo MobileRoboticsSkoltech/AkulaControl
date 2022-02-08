@@ -19,11 +19,10 @@ void sigtermHandler(int tSigNum) {
 //-----------------------------//
 int main() {
     std::unique_lock <std::mutex> MainLock(MainMutex);
-    Server* AkulaServer;
     signal(SIGTERM, sigtermHandler);
 
     try {
-        AkulaServer = new Server(50000, 32, 500);
+        auto AkulaServer = new Server;
     } catch (const std::runtime_error& tExcept) {
         std::cerr << tExcept.what() << std::endl;
         return -1;

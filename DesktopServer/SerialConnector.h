@@ -36,7 +36,7 @@ private:
 
     //----------//
 
-    [[nodiscard]] bool checkNewData() const;
+    [[nodiscard]] int8_t checkNewData() const;
 };
 //-----------------------------//
 #endif

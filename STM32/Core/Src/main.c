@@ -42,7 +42,9 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
 
@@ -52,6 +54,8 @@ TIM_HandleTypeDef htim3;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_TIM5_Init(void);
 /* USER CODE BEGIN PFP */
 /* USER CODE END PFP */
 
@@ -90,6 +94,8 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
   MX_TIM3_Init();
+  MX_TIM2_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
     HAL_TIM_Base_Start(&htim3);
@@ -98,6 +104,9 @@ int main(void)
 
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
     __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
+
+    HAL_TIM_Encoder_Start(&htim2, TIM_CHANNEL_ALL);
+    HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
 
     uint32_t WriteTag           = INVALID;
     uint32_t ReadTag            = INVALID;
@@ -109,6 +118,7 @@ int main(void)
     int RightMinus = 1;
 
     uint32_t CurrentTime;
+    uint32_t LastEncoderTime = HAL_GetTick();
     uint8_t SendResult;
 
   /* USER CODE END 2 */
@@ -146,7 +156,6 @@ int main(void)
         } else {
             if (readSerial(ReadBuffer, PACKET_SIZE)) {
                 memcpy(&ReadTag, ReadBuffer, 4);
-                float Ratio;
 
                 switch (ReadTag) {
                     case PING:
@@ -156,7 +165,7 @@ int main(void)
 
                         do {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-                        } while (SendResult == USBD_BUSY);
+                        } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
 
                         WriteTag = INVALID;
 
@@ -186,15 +195,13 @@ int main(void)
 
                         //----------//
 
-                        Ratio = 100.0f / MAX_PWM;
-
                         if (LeftPWM < 0) {
                             if (LeftMinus == 0) {
                                 HAL_GPIO_WritePin(GPIOD, GPIO_PIN_6, GPIO_PIN_RESET);
                                 LeftMinus = 1;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM * Ratio + OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, -LeftPWM);
                         }
 
                         if (LeftPWM > 0) {
@@ -203,7 +210,7 @@ int main(void)
                                 LeftMinus = 0;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, LeftPWM * Ratio + OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, LeftPWM);
                         }
 
                         if (RightPWM < 0) {
@@ -212,7 +219,7 @@ int main(void)
                                 RightMinus = 1;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, -RightPWM * Ratio + OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, -RightPWM);
                         }
 
                         if (RightPWM > 0) {
@@ -221,24 +228,24 @@ int main(void)
                                 RightMinus = 0;
                             }
 
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, RightPWM * Ratio + OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, RightPWM);
                         }
 
                         //----------//
 
                         if (LeftPWM == 0) {
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_3, 0);
                         }
 
                         if (RightPWM == 0) {
-                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, OFFSET_PWM);
+                            __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
                         }
 
                         //----------//
 
                         do {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-                        } while (SendResult == USBD_BUSY);
+                        } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
 
                         WriteTag = INVALID;
 
@@ -249,7 +256,7 @@ int main(void)
 
                         do {
                             SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
-                        } while (SendResult == USBD_BUSY);
+                        } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
 
                         WriteTag = INVALID;
 
@@ -275,6 +282,26 @@ int main(void)
                 __HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_4, 0);
 
                 continue;
+            }
+
+            if (HAL_GetTick() - LastEncoderTime >= 50) {
+                LastEncoderTime = HAL_GetTick();
+
+                WriteTag = ENCODER;
+
+                gEncoderLeft = TIM2 -> CNT;
+                gEncoderRight = TIM5 -> CNT;
+
+                memcpy(WriteBuffer, &WriteTag, 4);
+                memcpy(WriteBuffer + 4, &LastEncoderTime, 4);
+                memcpy(WriteBuffer + 8, &gEncoderLeft, 4);
+                memcpy(WriteBuffer + 12, &gEncoderRight, 4);
+
+                do {
+                    SendResult = CDC_Transmit_FS(WriteBuffer, PACKET_SIZE);
+                } while (SendResult == USBD_BUSY && (HAL_GetTick() - CurrentTime) < TimeoutMs);
+
+                WriteTag = INVALID;
             }
         }
     /* USER CODE END WHILE */
@@ -328,6 +355,55 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_Encoder_InitTypeDef sConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 0;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 0xffffffff;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_FALLING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
+
+}
+
+/**
   * @brief TIM3 Initialization Function
   * @param None
   * @retval None
@@ -347,9 +423,9 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 4;
+  htim3.Init.Prescaler = 5-1;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 139;
+  htim3.Init.Period = 280-1;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
@@ -372,7 +448,7 @@ static void MX_TIM3_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 139;
+  sConfigOC.Pulse = 280-1;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
@@ -391,6 +467,55 @@ static void MX_TIM3_Init(void)
 }
 
 /**
+  * @brief TIM5 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM5_Init(void)
+{
+
+  /* USER CODE BEGIN TIM5_Init 0 */
+
+  /* USER CODE END TIM5_Init 0 */
+
+  TIM_Encoder_InitTypeDef sConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM5_Init 1 */
+
+  /* USER CODE END TIM5_Init 1 */
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 0;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 0xffffffff;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
+  sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC1Filter = 0;
+  sConfig.IC2Polarity = TIM_ICPOLARITY_FALLING;
+  sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+  sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
+  sConfig.IC2Filter = 0;
+  if (HAL_TIM_Encoder_Init(&htim5, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM5_Init 2 */
+
+  /* USER CODE END TIM5_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -401,8 +526,8 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
