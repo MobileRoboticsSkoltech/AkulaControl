@@ -22,6 +22,7 @@ sudo apt update
 4. gcc, g++ (version >= 9.3.0)
 5. arm-none-eabi-g++, arm-none-eabi-gcc (version >= 9.2.1)
 6. **(optional)** basler-ros2-driver (if you need this camera, otherwise exclude it from the Main.launch.py and from AkulaSensorsRecord.sh that currently obtains images from Basler while recording)
+7. **(optional)** velodyne (if you need a ros2 node for this lidar, otherwise exclude it from the Main.launch.py and from AkulaSensorsRecord.sh that currently obtains data from Velodyne while recording)
 
 For some tools you can change CMakeLists.txt files to check whether building works for older versions.
 
@@ -91,11 +92,17 @@ cd path/to/AkulaControl/AndroidApp
 ```
 ln -s /global/path/to/AkulaPackageROS2 /global/path/to/env/src/akula_package
 ```
-2. **(optional)** If you want to use Basler camera, clone the repository (https://github.com/MobileRoboticsSkoltech/basler_ros2_driver) and add a soft link to it:
+2. **(optional)** If you want to use Basler camera, clone the repository (https://github.com/MobileRoboticsSkoltech/basler_ros2_driver) and create a soft link to it inside your ROS environment source directory:
 
 ```
 git clone https://github.com/MobileRoboticsSkoltech/basler_ros2_driver.git
 ln -s /global/path/to/basler_ros2_driver /global/path/to/env/src/basler_ros2_driver
+```
+3. **(optional)** If you want to use Velodyne lidar, clone the **ros2** branch from the repository (https://github.com/ros-drivers/velodyne) and create a soft link to it inside your ROS environment source directory:
+
+```
+git clone -b ros2 --single-branch https://github.com/ros-drivers/velodyne.git
+ln -s /global/path/to/velodyne /global/path/to/env/src/velodyne
 ```
 3. Build everything using colcon:
 
