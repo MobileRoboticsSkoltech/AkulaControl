@@ -4,11 +4,7 @@
 
 AkulaControl is a package for controlling skid steering robot, obtaining data from Velodyne VLP-16 lidar, Basler camera and encoders and publishing everything through ROS2 Foxy. The package is consisted of the main server (DesktopServer), stm32f407 board firmware (STM32), mobile control UI (AndroidApp) and ROS2 package (AkulaPackageROS2). It is quite easy to adapt this code to any sensors you want to use or even platforms due to modules separation and the fact that communication between them is packet-based.
 
-The main server has three file descriptors dedicated to data transmisson:
-1. serial (for communication with stm32)
-2. UDP server (for communication with Android device)
-3. UDP client (for passing encoder values to akula_package ROS node).
-It is responsible for passing controls from Android joystick to stm32 board in PWM format, enabling/disabling sensors and data recording via systemd services calls, sending heartbeats to the Android app with information about connection to stm32 board, sensors and recording status.
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/Architecture.png)
 
 ### Requirements:
 Start obtaining dependencies with
@@ -109,3 +105,13 @@ ln -s /global/path/to/velodyne /global/path/to/env/src/velodyne
 ```
 colcon build --symlink-install
 ```
+
+### System setup
+
+1. Download firmware to you stm32f407 board.
+2. Download Android app to your smartphone.
+3. In the **config** directory change **control.yaml** file for your configuration (if you have exactly the same setup, you don't need to change this config).
+4. Start **DesktopServer** executable.
+5. Connect stm32f407 to your PC using micro-USB cable (if you don't have external power for the board, also connect mini-USB cable to power it from PC).
+6. Open Android app, pull the top slider down, fill in the address of your PC in the wireless network and press **Request** button.
+7. If everything works correctly, you will have green and yellow virtual LEDs in enable state - now you can control the robot.
