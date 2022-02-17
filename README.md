@@ -66,7 +66,7 @@ make -j
 
 ### Building AndroidApp (joystick and control buttons on Android):
 1a. The easiest way to build the project is to use Android Studio. <br>
-2a. Change **local.properties** file providing path to your Android SDK
+2a. Change **local.properties** file providing path to your Android SDK <br>
 3a. To sign your app folow these instructions: https://developer.android.com/studio/publish/app-signing
 
 1b. If you want to avoid using any of the IDEs, you need to install JDK and manually setup gradle:
