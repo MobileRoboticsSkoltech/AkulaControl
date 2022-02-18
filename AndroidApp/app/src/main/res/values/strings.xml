@@ -1,3 +1,31 @@
 <resources>
-    <string name="app_name">AndroidApp</string>
+    <string name="app_name">Akula control</string>
+
+    <string name="RequestButton">Request</string>
+
+    <string name="IpHint">IP address</string>
+    <string name="PortHint">Port</string>
+    <string name="IpDefaultText">10.16.112.56</string>
+    <string name="PortDefaultText">50000</string>
+
+    <string name="ServerTextLED">Server</string>
+    <string name="RecordTextLED">Rec.</string>
+    <string name="SensorTextLED">Sensor</string>
+    <string name="Stm32TextLED">STM32</string>
+
+    <string name="RecordButtonStop">Stop</string>
+    <string name="RecordButtonStart">Record</string>
+
+    <string name="SensorsButtonStop">Stop sensors</string>
+    <string name="SensorsButtonStart">Start sensors</string>
+
+    <string name="LatencyButtonText">Latency</string>
+
+    <string name="LeftEncoderText">Left:\ </string>
+    <string name="RightEncoderText">Right:\ </string>
+    <string name="LeftEncoderDefaultText">0.0</string>
+    <string name="RightEncoderDefaultText">0.0</string>
+
+    <string name="LatencyText">Latency:\ </string>
+    <string name="LatencyDefaultText">0.0</string>
 </resources>

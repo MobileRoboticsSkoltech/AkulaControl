@@ -1,5 +1,5 @@
 package com.example.androidapp;
-
+//-----------------------------//
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -7,11 +7,13 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
-
 import androidx.annotation.Nullable;
-
 import java.lang.Math;
-
+//-----------------------------//
+/**
+ * Custom joystick that cannot be moved outside of the circle to avoid
+ * touching other controls
+ */
 class Joystick extends View {
     public Joystick(Context tContext) {
         super(tContext);
@@ -73,14 +75,14 @@ class Joystick extends View {
                 break;
             case MotionEvent.ACTION_MOVE:
                 if (mMoving) {
-                    mRadius = (float)Math.sqrt(Math.pow(tEvent.getX() + mDeltaX - mCenterX, 2) + Math.pow(tEvent.getY() + mDeltaY - mCenterY, 2));
+                    float Radius = (float)Math.sqrt(Math.pow(tEvent.getX() + mDeltaX - mCenterX, 2) + Math.pow(tEvent.getY() + mDeltaY - mCenterY, 2));
 
                     if (mOutOfBounds) {
-                        mTouchRadius = (float)Math.sqrt(Math.pow(tEvent.getX() - mCenterX, 2) + Math.pow(tEvent.getY() - mCenterY, 2));
+                        float TouchRadius = (float)Math.sqrt(Math.pow(tEvent.getX() - mCenterX, 2) + Math.pow(tEvent.getY() - mCenterY, 2));
 
-                        if (mTouchRadius > mMaxMoveRadius) {
-                            mHatX = (tEvent.getX() + mDeltaX - mCenterX) / mRadius * mMaxMoveRadius + mCenterX;
-                            mHatY = (tEvent.getY() + mDeltaY - mCenterY) / mRadius * mMaxMoveRadius + mCenterY;
+                        if (TouchRadius > mMaxMoveRadius) {
+                            mHatX = (tEvent.getX() + mDeltaX - mCenterX) / Radius * mMaxMoveRadius + mCenterX;
+                            mHatY = (tEvent.getY() + mDeltaY - mCenterY) / Radius * mMaxMoveRadius + mCenterY;
                         } else {
                             mDeltaX = mHatX - tEvent.getX();
                             mDeltaY = mHatY - tEvent.getY();
@@ -91,9 +93,9 @@ class Joystick extends View {
                             mOutOfBounds = false;
                         }
                     } else {
-                        if (mRadius > mMaxMoveRadius) {
-                            mHatX = (tEvent.getX() + mDeltaX - mCenterX) / mRadius * mMaxMoveRadius + mCenterX;
-                            mHatY = (tEvent.getY() + mDeltaY - mCenterY) / mRadius * mMaxMoveRadius + mCenterY;
+                        if (Radius > mMaxMoveRadius) {
+                            mHatX = (tEvent.getX() + mDeltaX - mCenterX) / Radius * mMaxMoveRadius + mCenterX;
+                            mHatY = (tEvent.getY() + mDeltaY - mCenterY) / Radius * mMaxMoveRadius + mCenterY;
 
                             mOutOfBounds = true;
                         } else {
@@ -158,7 +160,5 @@ class Joystick extends View {
     private float           mDeltaY                 = 0.0f;
 
     private float           mMaxMoveRadius          = 0.0f;
-    private float           mRadius                 = 0.0f;
-    private float           mTouchRadius            = 0.0f;
     private boolean         mOutOfBounds            = false;
 }

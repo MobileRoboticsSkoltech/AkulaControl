@@ -13,7 +13,6 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 //-----------------------------//
-///---TODO: add status enum to deal with network errors without crashing the program---///
 /**
  * @description
  * Class opens a serial port and provides functions for reading and writing data in packets
@@ -36,7 +35,7 @@ private:
 
     //----------//
 
-    [[nodiscard]] bool checkNewData() const;
+    [[nodiscard]] int8_t checkNewData() const;
 };
 //-----------------------------//
 #endif

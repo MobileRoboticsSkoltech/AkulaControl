@@ -1,15 +1,16 @@
 package com.example.androidapp;
-
+//-----------------------------//
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
-
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+//-----------------------------//
 /**
  * @description
  * The class operates as a connector between Client and UI
@@ -20,6 +21,10 @@ class NetworkThread extends HandlerThread {
         mHandlerUI = tHandler;
     }
 
+    /**
+     * Main function that handles all the messages passed from the Client class and translates
+     * them to the UI thread
+     */
     @Override
     protected void onLooperPrepared() {
         super.onLooperPrepared();
@@ -29,11 +34,15 @@ class NetworkThread extends HandlerThread {
             public void handleMessage(Message tMsg) {
                 super.handleMessage(tMsg);
                 Message Msg = mHandler.obtainMessage();
+                Header MsgHeader = Header.fromInt(tMsg.what);
 
-                switch (Header.fromInt(tMsg.what)) {
+                if (MsgHeader == null) {
+                    return;
+                }
+
+                switch (MsgHeader) {
                     case REQUEST_CONN:
                         mClientUDP.sendRequest();
-
                         break;
                     case PING:
                         if (!mConnected) {
@@ -42,6 +51,45 @@ class NetworkThread extends HandlerThread {
 
                         Msg.what = Header.PING.getValue();
                         mHandlerUI.sendMessage(Msg);
+
+                        Bundle PingBund = tMsg.getData();
+                        byte Stm32State = PingBund.getByte("stm32");
+                        byte RecordState = PingBund.getByte("record");
+                        byte SensorState = PingBund.getByte("sensor");
+
+                        Message StmMsg = mHandler.obtainMessage();
+
+                        if (Stm32State == 0) {
+                            StmMsg.what = Header.STM32_DISCONNECTED.getValue();
+                        } else {
+                            StmMsg.what = Header.STM32_ONLINE.getValue();
+                        }
+
+                        mHandlerUI.sendMessage(StmMsg);
+
+                        //----------//
+
+                        Message RecordMsg = mHandler.obtainMessage();
+
+                        if (RecordState == 0) {
+                            RecordMsg.what = Header.RECORD_INACTIVE.getValue();
+                        } else {
+                            RecordMsg.what = Header.RECORD_ACTIVE.getValue();
+                        }
+
+                        mHandlerUI.sendMessage(RecordMsg);
+
+                        //----------//
+
+                        Message SensorMsg = mHandler.obtainMessage();
+
+                        if (SensorState == 0) {
+                            SensorMsg.what = Header.SENSOR_INACTIVE.getValue();
+                        } else {
+                            SensorMsg.what = Header.SENSOR_ACTIVE.getValue();
+                        }
+
+                        mHandlerUI.sendMessage(SensorMsg);
 
                         break;
                     case DISCONNECTED:
@@ -56,14 +104,11 @@ class NetworkThread extends HandlerThread {
                             Bundle Bund = tMsg.getData();
                             float[] Coords = Bund.getFloatArray("Coords");
 
-                            mClientUDP.sendCoords(Coords[0], Coords[1]);
-
                             mCoordsObtainState = false;
 
-                            try {
-                                Thread.sleep(20);
-                            } catch (InterruptedException tExcept) {
-                                tExcept.printStackTrace();
+                            if (Duration.between(mLastCoordTime, LocalTime.now()).toMillis() > mTimeoutMs || Coords[0] == 0 && Coords[1] == 0) {
+                                mLastCoordTime = LocalTime.now();
+                                mClientUDP.sendCoords(Coords[0], Coords[1]);
                             }
 
                             mCoordsObtainState = true;
@@ -76,8 +121,28 @@ class NetworkThread extends HandlerThread {
                         }
 
                         break;
+                    case TOGGLE_RECORD:
+                        Message ToggleRecordMsg = mHandler.obtainMessage();
+                        ToggleRecordMsg.what = Header.TOGGLE_RECORD.getValue();
+                        mHandlerUI.sendMessage(ToggleRecordMsg);
+
+                        if (mConnected) {
+                            mClientUDP.sendRecordState();
+                        }
+
+                        break;
+                    case TOGGLE_SENSOR:
+                        Message ToggleSensorsMsg = mHandler.obtainMessage();
+                        ToggleSensorsMsg.what = Header.TOGGLE_SENSOR.getValue();
+                        mHandlerUI.sendMessage(ToggleSensorsMsg);
+
+                        if (mConnected) {
+                            mClientUDP.sendSensorState();
+                        }
+
+                        break;
                     case LATENCY_RESPONSE:
-                        System.out.println("Sending latency to UI...");
+                    case ENCODER:
                         Msg.copyFrom(tMsg);
                         mHandlerUI.sendMessage(Msg);
 
@@ -96,7 +161,13 @@ class NetworkThread extends HandlerThread {
         }
     }
 
-
+    /**
+     * Function tries to establish connection with a server
+     * @param tIP Server address
+     * @param tPort Server port
+     * @throws SocketException Not handled properly
+     * @throws UnknownHostException Not handled properly
+     */
     void sendConnectionRequest(String tIP, int tPort) throws SocketException, UnknownHostException {
         String IpRange = "(?:0|[1-9]|[1-9][0-9]|1[0-9]?[0-9]|2[0-4][0-9]|25[0-5])";
         Pattern IpPattern = Pattern.compile("^" + IpRange + "\\." + IpRange + "\\." + IpRange + "\\." + IpRange + "$");
@@ -152,12 +223,35 @@ class NetworkThread extends HandlerThread {
         }
     }
 
+    /**
+     * Latency test packet goes to the server, then to stm32 and back
+     */
     void sendLatencyTest() {
         if (mHandler != null) {
             Message Msg = mHandler.obtainMessage();
 
             if (Msg != null) {
                 Msg.what = Header.LATENCY.getValue();
+                mHandler.sendMessage(Msg);
+            }
+        }
+    }
+    void sendRecordState() {
+        if (mHandler != null) {
+            Message Msg = mHandler.obtainMessage();
+
+            if (Msg != null) {
+                Msg.what = Header.TOGGLE_RECORD.getValue();
+                mHandler.sendMessage(Msg);
+            }
+        }
+    }
+    void sendSensorState() {
+        if (mHandler != null) {
+            Message Msg = mHandler.obtainMessage();
+
+            if (Msg != null) {
+                Msg.what = Header.TOGGLE_SENSOR.getValue();
                 mHandler.sendMessage(Msg);
             }
         }
@@ -171,4 +265,7 @@ class NetworkThread extends HandlerThread {
 
     private boolean                             mConnected              = false;
     private boolean                             mCoordsObtainState      = true;
+
+    LocalTime                                   mLastCoordTime          = LocalTime.now();
+    int                                         mTimeoutMs              = 50;
 }

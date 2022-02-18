@@ -4,27 +4,37 @@
 //-----------------------------//
 #include "SerialMonitor.h"
 //-----------------------------//
-SerialMonitor::SerialMonitor(const std::string& tSerialPath, size_t tPacketSize, SerialMessenger* tMessenger) {
-    try {
-        mConnector = new SerialConnector(tSerialPath, B115200, 2000, tPacketSize);
-    } catch (const std::runtime_error& tExcept) {
-        throw;
-    }
-
-    mPacketSize     = tPacketSize;
-    mMessenger      = tMessenger;
+SerialMonitor::SerialMonitor(const std::string& tSerialPath,
+                             size_t tPacketSize,
+                             SerialMessenger* tMessenger,
+                             uint32_t tSerialTimeoutMs,
+                             uint32_t tTimerSleepIntervalMs,
+                             uint32_t tPingIntervalMs) {
+    mPacketSize             = tPacketSize;
+    mSerialPath             = tSerialPath;
+    mMessenger              = tMessenger;
+    mSerialTimeout          = tSerialTimeoutMs;
+    mTimerSleepIntervalMs   = tTimerSleepIntervalMs;
+    mPingIntervalMs         = tPingIntervalMs;
 
     mReadBuffer     = new uint8_t[tPacketSize];
     mWriteBuffer    = new uint8_t[tPacketSize];
+
+    mRunning.store(true);
 }
 SerialMonitor::~SerialMonitor() {
+    mRunning.store(false);
+
+    if (mTimerThread.valid()) {
+        mTimerThread.wait();
+    }
+
     delete(mConnector);
 
     delete[](mReadBuffer);
     delete[](mWriteBuffer);
 }
 //-----------------------------//
-///---TODO: add timeout to re-enable connection procedure and send timeout state to the smartphone---///
 /**
  * @description
  * The function is the main loop for serial communication, there connection to the serial port is established and
@@ -34,34 +44,45 @@ void SerialMonitor::startSerialLoop() {
     auto ReadTag = PacketType::INVALID;
     auto WriteTag = PacketType::INVALID;
 
+    ssize_t ReadBytes;
+
     //----------//
 
-    mRunning.store(true);
+    try {
+        mConnector = new SerialConnector(mSerialPath, B115200, mSerialTimeout, mPacketSize);
+    } catch (const std::runtime_error &tExcept) {
+        mRunning.store(false);
+        throw std::runtime_error("Serial connector creation failed!");
+    }
 
     mTimerThread = std::async(std::launch::async, &SerialMonitor::timerCallback, this);
 
     while (mRunning.load()) {
         if (!mConnected.load()) {
-            if (mConnector -> readSerial(mReadBuffer) > 0) {
+            if ((ReadBytes = mConnector -> readSerial(mReadBuffer)) > 0) {
                 memcpy(&ReadTag, mReadBuffer, 4);
 
                 if (ReadTag == PacketType::REQUEST_CONN) {
                     std::cout << "Request" << std::endl;
                     WriteTag = PacketType::PING;
                     memcpy(mWriteBuffer, &WriteTag, 4);
-                    mConnector -> writeSerial(mWriteBuffer);
-                    mConnected.store(true);
 
+                    if (mConnector -> writeSerial(mWriteBuffer) < 0) {
+                        mRunning.store(false);
+                        throw std::runtime_error("writeSerial failed!");
+                    }
+
+                    mConnected.store(true);
                     WriteTag = PacketType::INVALID;
                 }
 
                 ReadTag = PacketType::INVALID;
-            } else {
-                //---Maybe we don't need timeout here---//
-                std::cerr << "Timeout" << std::endl;
+            } else if (ReadBytes < 0) {
+                mRunning.store(false);
+                throw std::runtime_error("readSerial failed!");
             }
         } else {
-            if (mConnector -> readSerial(mReadBuffer) > 0) {
+            if ((ReadBytes = mConnector -> readSerial(mReadBuffer)) > 0) {
                 memcpy(&ReadTag, mReadBuffer, 4);
 
                 switch (ReadTag) {
@@ -72,8 +93,8 @@ void SerialMonitor::startSerialLoop() {
                         std::cout << "Request: skip" << std::endl;
                         break;
                     case PacketType::JOYSTICK_COORDS:
-                        std::cout << "Coord response!" << std::endl;
                         break;
+                    case PacketType::ENCODER:
                     case PacketType::LATENCY:
                         {
                             std::scoped_lock<std::mutex> Lock(mMessenger -> mMutex);
@@ -82,22 +103,24 @@ void SerialMonitor::startSerialLoop() {
                         }
 
                         mMessenger -> mDataCV.notify_one();
-
                         break;
                     case PacketType::INVALID:
-                    {
-                        uint32_t Tag;
-                        memcpy(&Tag, mReadBuffer + 4, 4);
-                        std::cerr << "Invalid " << Tag << std::endl;
-                    }
+                        {
+                            uint32_t Tag;
+                            memcpy(&Tag, mReadBuffer + 4, 4);
+                            std::cerr << "Invalid " << Tag << std::endl;
+                        }
 
                         break;
                     default:
-                        std::cerr << "Something went wrong: " << static_cast <uint32_t>(ReadTag) << std::endl;
                         mRunning.store(false);
+                        throw std::runtime_error("Unknown packet: " + std::to_string(static_cast <uint32_t>(ReadTag)));
                 }
 
                 ReadTag = PacketType::INVALID;
+            } else if (ReadBytes < 0) {
+                mRunning.store(false);
+                throw std::runtime_error("readSerial failed!");
             }
         }
     }

@@ -10,19 +10,25 @@
 #include <condition_variable>
 #include <cstring>
 #include <queue>
+#include <algorithm>
+//-----------------------------//
+#include <yaml-cpp/yaml.h>
 //-----------------------------//
 #include "dSocket/dSocket.h"
 #include "SerialMonitor.h"
 #include "MotorPWM.h"
 //-----------------------------//
 enum class SmartphoneHeader {
-    REQUEST_CONN,
-    JOYSTICK_COORDS,
-    PING,
-    STATUS,
-    INVALID,
-    DISCONNECTED,
-    LATENCY
+    REQUEST_CONN        = 0x0000AAAA,
+    JOYSTICK_COORDS     = 0x0000AAAB,
+    PING                = 0x0000AAAC,
+    STATUS              = 0x0000AAAD,
+    DISCONNECTED        = 0x0000AAAE,
+    LATENCY             = 0x0000AAAF,
+    ENCODER             = 0x0000AABA,
+    TOGGLE_RECORD       = 0x0000AACC,
+    TOGGLE_SENSOR       = 0x0000AACD,
+    INVALID             = 0x0000FFFF
 };
 enum class ServerResult {
     SUCCESS,
@@ -40,18 +46,39 @@ enum class ServerResult {
  */
 class Server {
 public:
-    Server(uint16_t tPort, size_t tPacketSize, uint32_t tConnTimeout);
+    Server();
     ~Server();
 private:
     std::atomic_bool                            mTerminate                              = false;
     std::atomic_bool                            mConnected                              = false;
+    std::atomic_bool                            mSerialActive                           = false;
+    std::atomic_bool                            mSensorsRecording                       = false;
+    std::atomic_bool                            mSensorsActive                          = false;
 
     std::chrono::system_clock::time_point       mSmartphoneLastPingTime                 = std::chrono::system_clock::now();
     uint32_t                                    mTimeoutMs                              = 0;
+    uint32_t                                    mTimerSleepIntervalMs                   = 0;
+
+    //----------//
+
+    uint32_t                                    mSensorsRecordCheckTimeoutMs            = 0;
+    std::chrono::system_clock::time_point       mSensorsRecordLastCheckTime             = std::chrono::system_clock::now();
+    std::string                                 mSensorsRecordStatusCmd;
+    std::string                                 mSensorsRecordStartCmd;
+    std::string                                 mSensorsRecordStopCmd;
+
+    //----------//
+
+    uint32_t                                    mSensorsLaunchCheckTimeoutMs            = 0;
+    std::chrono::system_clock::time_point       mSensorsLaunchLastCheckTime             = std::chrono::system_clock::now();
+    std::string                                 mSensorsLaunchStatusCmd;
+    std::string                                 mSensorsLaunchStartCmd;
+    std::string                                 mSensorsLaunchStopCmd;
 
     //----------//
 
     dSocket*                                    mSocketUDP                              = nullptr;
+    dSocket*                                    mSensorSocketUDP                        = nullptr;
 
     sockaddr_in                                 mSmartphoneAddr                         = {};
     socklen_t                                   mSmartphoneAddrLen                      = 0;
@@ -65,11 +92,15 @@ private:
     uint8_t*                                    mSmartphoneReadBuffer                   = nullptr;
     uint8_t*                                    mSmartphoneWriteBuffer                  = nullptr;
 
+    uint8_t*                                    mSensorWriteBuffer                      = nullptr;
+
     //----------//
 
     std::future <dSocketResult>                 mSmartphoneReadThread;
     std::future <dSocketResult>                 mSmartphoneWriteThread;
     std::future <dSocketResult>                 mSmartphoneProcessThread;
+
+    std::future <dSocketResult>                 mSensorWriteThread;
 
     std::condition_variable                     mSmartphoneReadCV;
     std::condition_variable                     mSmartphoneWriteCV;
@@ -95,11 +126,26 @@ private:
 
     //----------//
 
-    SerialMonitor*                              mMonitorSTM                             = nullptr;
-    SerialMessenger*                            mMessengerSTM                           = nullptr;
+    std::condition_variable                     mSensorWriteCV;
+    std::mutex                                  mSensorWriteMutex;
+    bool                                        mSensorWriteState                       = false;
+
+    std::condition_variable                     mSensorWriteBufferCV;
+    std::mutex                                  mSensorWriteBufferMutex;
+    bool                                        mSensorWriteBufferReady                 = false;
 
     //----------//
 
+    SerialMonitor*                              mMonitorSTM                             = nullptr;
+    SerialMessenger*                            mMessengerSTM                           = nullptr;
+    size_t                                      mSerialPacketSize                       = 0;
+    uint32_t                                    mSerialTimeout                          = 0;
+    uint32_t                                    mSerialTimerSleepIntervalMs             = 0;
+    uint32_t                                    mSerialPingIntervalMs                   = 0;
+
+    //----------//
+
+    std::string                                 mSerialPath;
     std::future <ServerResult>                  mTimerThread;
     std::future <void>                          mSerialThread;
     std::future <void>                          mSerialDataThread;
@@ -118,6 +164,8 @@ private:
     dSocketResult smartphoneWriteCallback();
     dSocketResult smartphoneProcessCallback();
 
+    dSocketResult sensorWriteCallback();
+
     //----------//
 
     bool fillSmartphoneReadBuffer(const uint8_t* tBuffer);
@@ -125,6 +173,9 @@ private:
 
     bool fillSmartphoneWriteBuffer(const uint8_t* tBuffer);
     bool getSmartphoneWriteBuffer(uint8_t* tBuffer);
+
+    bool fillSensorWriteBuffer(const uint8_t* tBuffer);
+    bool getSensorWriteBuffer(uint8_t* tBuffer);
 
     //----------//
 

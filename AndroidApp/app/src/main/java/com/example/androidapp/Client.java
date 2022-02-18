@@ -3,10 +3,7 @@ package com.example.androidapp;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
-import android.os.SystemClock;
-
 import androidx.annotation.RequiresApi;
-
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
@@ -16,6 +13,12 @@ import java.time.LocalTime;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 //-----------------------------//
+/**
+ * Main networking class that sets up three threads for reading, writing sockets and processing
+ * UDP packets. For synchronization between them functions fillReadBuffer, getReadBuffer,
+ * fillWriteBuffer and getWriteBuffer are used. Very important to notice that endian of the sent
+ * and received values is changed due to some differences Java in this app and C++ server
+ */
 public class Client {
     public Client(int tPacketSize, int tConnTimeout, android.os.Handler tHandler) {
         mPacketSize     = tPacketSize;
@@ -122,6 +125,32 @@ public class Client {
 
         mLatencyTestStart = System.nanoTime();
     }
+    public void sendRecordState() {
+        byte[] Packet = new byte[mPacketSize];
+        byte[] Zeros = new byte[mPacketSize - 4];
+        Header Tag = Header.TOGGLE_RECORD;
+
+        ByteBuffer Buffer = ByteBuffer.wrap(Packet);
+        Buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        Buffer.putInt(Tag.getValue());
+        Buffer.put(Zeros);
+
+        fillWriteBuffer(Packet);
+    }
+    public void sendSensorState() {
+        byte[] Packet = new byte[mPacketSize];
+        byte[] Zeros = new byte[mPacketSize - 4];
+        Header Tag = Header.TOGGLE_SENSOR;
+
+        ByteBuffer Buffer = ByteBuffer.wrap(Packet);
+        Buffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        Buffer.putInt(Tag.getValue());
+        Buffer.put(Zeros);
+
+        fillWriteBuffer(Packet);
+    }
 
     public boolean isRunning() {
         return mRunning;
@@ -132,12 +161,10 @@ public class Client {
     void readFunc() {
         byte[]              Packet      = new byte[mPacketSize];
         DatagramPacket      PacketUDP   = new DatagramPacket(Packet, Packet.length);
-        boolean             NewData     = false;    //---Do I really need this?---//
 
-        while (!NewData && !mTerminate.get()) {
+        while (!mTerminate.get()) {
             try {
                 mSocket.receive(PacketUDP);
-                NewData = true;
             } catch (SocketTimeoutException tExcept) {
                 System.err.println("readFunc: receive timeout!");
                 continue;
@@ -154,8 +181,6 @@ public class Client {
             if (!fillReadBuffer(Packet)) {
                 return;
             }
-
-            NewData = false;
         }
     }
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -178,17 +203,13 @@ public class Client {
                     }
                 }
 
-                if (mTerminate.get()) {
-                    return;
-                }
-
                 if (mConnected.get()) {
                     synchronized (mTimerMonitor) {
                         mLastPacketTime = LocalTime.now();
                     }
                 }
 
-                if (!getWriteBuffer(Packet)) {
+                if (mTerminate.get() || !getWriteBuffer(Packet)) {
                     return;
                 }
 
@@ -213,7 +234,6 @@ public class Client {
     void processFunc() {
         byte[] Packet = new byte[mPacketSize];
         Header Tag;
-        int Counter = 0;
 
         while (!mTerminate.get()) {
             synchronized (mProcessMonitor) {
@@ -231,11 +251,7 @@ public class Client {
                     }
                 }
 
-                if (mTerminate.get()) {
-                    return;
-                }
-
-                if (!getReadBuffer(Packet)) {
+                if (mTerminate.get() || !getReadBuffer(Packet)) {
                     return;
                 }
 
@@ -245,13 +261,7 @@ public class Client {
                 Message Msg = mHandler.obtainMessage();
 
                 switch (Objects.requireNonNull(Tag)) {
-                    case REQUEST_CONN:
-                    case JOYSTICK_COORDS:
-                        break;
                     case PING:
-                        System.out.println(Counter);
-                        Counter++;
-
                         if (!mConnected.get()) {
                             mConnected.set(true);
 
@@ -259,6 +269,10 @@ public class Client {
                                 mLastPacketTime = LocalTime.now();
                             }
                         }
+
+                        byte Stm32State = Buffer.get();
+                        byte RecordState = Buffer.get();
+                        byte SensorState = Buffer.get();
 
                         byte[] PingPacket = new byte[mPacketSize];
 
@@ -274,6 +288,11 @@ public class Client {
                             return;
                         }
 
+                        Bundle PingBund = new Bundle(3);
+                        PingBund.putByte("stm32", Stm32State);
+                        PingBund.putByte("record", RecordState);
+                        PingBund.putByte("sensor", SensorState);
+                        Msg.setData(PingBund);
                         Msg.what = Header.PING.getValue();
                         mHandler.sendMessage(Msg);
 
@@ -288,8 +307,23 @@ public class Client {
                         mHandler.sendMessage(Msg);
 
                         break;
-                    case STATUS:
+                    case ENCODER:
+                        Bundle EncoderBund = new Bundle(2);
+
+                        long Value = Integer.toUnsignedLong(Integer.reverseBytes(Buffer.getInt()));
+                        EncoderBund.putLong("LeftEncoder", Value);
+
+                        Value = Integer.toUnsignedLong(Integer.reverseBytes(Buffer.getInt()));
+                        EncoderBund.putLong("RightEncoder", Value);
+
+                        Msg.setData(EncoderBund);
+                        Msg.what = Header.ENCODER.getValue();
+                        mHandler.sendMessage(Msg);
+
                         break;
+                    case STATUS:
+                    case REQUEST_CONN:
+                    case JOYSTICK_COORDS:
                     case INVALID:
                 }
 
@@ -430,7 +464,6 @@ public class Client {
     void timerFunc() {
         while (true) {
             synchronized (mTimerMonitor) {
-
                 if (mConnected.get() && Duration.between(mLastPacketTime, LocalTime.now()).toMillis() > mTimeoutMs) {
                     mConnected.set(false);
                     close();
