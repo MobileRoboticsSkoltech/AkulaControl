@@ -1,22 +1,61 @@
-# Setting Linux service to start/stop ROS2 recording
+# Setting Linux service to start/stop ROS2 sensor nodes and recording
 
-### Creating a service:
+### Setup:
 
-In order to call any ROS2 packets you need to source ROS environment, so, we create a script for sourcing and calling "**ros2 bag record**" with necessary parameters. It's very important to notice that ROS2 command is called with "**exec**", so that recording process would have the same PID as the main script, it's needed in order to be able to finish everything properly through stopping the service. As long as we don't want to start recording with sudo rights, the service must have path "**/home/'login'/.config/systemd/user/'service_name'.service**".
-
-### Calling a service:
-
-1. Starting:
+1. In order to use services in the userspace it's necessary to put them in the proper directory:
 ```
-systemctl --user start akula_sensors.service
+mkdir -p ~/.config/systemd/user
+cp AkulaControl/Systemd/akula_sensors_*.service ~/.config/systemd/user
 ```
 
-2. Stopping:
+2. Inside the both services change path (**global!**) to the scripts that run all the ROS related stuff:
 ```
-systemctl --user stop akula_sensors.service
+[Service] 
+Type=simple
+ExecStart=path/to/AkulaSensorsLauncher.sh
+```
+or
+```
+ExecStart=path/to/AkulaSensorsRecord.sh
+```
+3. Inside the both scripts change **source** path to your ROS environment directory:
+```
+source path/to/env/install/setup.bash
+```
+4. Inside the **AkulaSensorsRecord.sh** script change the path to directory to save all the ROS bags to:
+```
+SAVE_PATH=path/to/save/rosbags
+```
+5. In the same **AkulaSensorsRecord.sh** script specify the topic you want to record:
+```
+TOPICS=(
+    '/basler/image' 
+    '/basler/camera_info'
+    '/robot_description'
+    '/velodyne_points'
+)
 ```
 
-3. Checking status:
+### Usage:
+
+1. Starting/stopping sensors:
 ```
-systemctl --user status akula_sensors.service
+systemctl --user start akula_sensors_launcher.service
+systemctl --user stop akula_sensors_launcher.service
 ```
+
+2. Starting/stopping recording:
+```
+systemctl --user start akula_sensors_record.service
+systemctl --user stop akula_sensors_record.service
+```
+
+3. Checking service status:
+```
+systemctl --user status akula_sensors_launcher.service
+systemctl --user status akula_sensors_record.service
+```
+
+### Warning
+
+If you want to change the service, be sure to use **exec** for calling the scripts to ensure that the sevice shares PID with the script underneath, otherwise stopping the service will result in loosing control over the script execution.

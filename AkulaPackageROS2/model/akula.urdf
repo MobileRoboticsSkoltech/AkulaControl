@@ -21,4 +21,8 @@
   <origin xyz="-0.13105 -0.0202 0.26839" rpy="0 0 0" />
 </xacro:board>
 
+<xacro:basler parent="akula">
+  <origin xyz="0.126104 0.00069 0.46668" rpy="0 0 0" />
+</xacro:basler>
+
 </robot>

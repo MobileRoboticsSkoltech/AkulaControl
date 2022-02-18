@@ -4,7 +4,13 @@
 
 1. In RCC set HSE to "**Crystal/Ceramic Resonator**", leave LSE disabled
 2. Set USB_OTG_FS mode to "**Device_Only**"
+
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/USB_OTG_FS.png)
+
 3. In USB_DEVICE set class for FS IP to "**Communication Device Class (Virtual Port Com)**"
+
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/USB_DEVICE.png)
+
 4. Set pin PB9 to GPIO_Output to fix warning
 
 ### Clock Configuration:
@@ -39,10 +45,14 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProdu
 2. Set Channel3 to "**PWM Generation CH3**" and Channel4 to "**PWM Generation CH4**"
 3. For direction control set pins to "**GPIO_Output**" (in our case it is PD4 and PD6), you can skip it, if you need only one direction
 
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/TIM3.png)
+
 ### Clock Configuration:
 
 1. As long as TIM3 is related to "**APB1**", set "**APB1 Prescaler**" to "**/4**"
 2. You should get 84MHz for "**APB1 timer clocks**" (this value is very important!)
+
+**P.S. It's APB1 - I messed up, so, will fix it in the nearest future (anyway, you can just set APB1 clock to 42Mhz to make it right)**
 
 ### PWM parameters
 
@@ -51,11 +61,13 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProdu
 3. Calculate the prescaler using formula ```Prescaler = TIM3Clock / UpdateFrequency / (Period + 1) - 1```
 4. In "**TIM3 -> Parameter Settings**" set "**Prescaler**" (5-1 in our case) and also "**Counter Period**" and "**Pulse**" for both channels (279 in our case)
 
-![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/TIM3.png)
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/TIM3_param.png)
 
-### Final clocks
+### Final clocks and pinout
 
-![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/Clock.png)
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/Clock.png)
+
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/Pins.png)
 
 # Setting timers for Hall sensors (Encoder Mode)
 
@@ -63,9 +75,10 @@ KERNEL=="ttyACM[0-9]*", SUBSYSTEM=="tty", ATTRS{idVendor}=="0483", ATTRS{idProdu
 
 1. In TIM2 and TIM5 set Clock Source to "**Internal Clock**"
 2. Set "**Combined Channels**" to "**Encoder Mode**"
-3. For both timers in "**Parameter Settings**" set "**Prescaler**" (1000-1 in our case) and "**Counter Period**" (65535 in our case), also in the "**Encoder**" section set "**Encoder Mode**" parameter to "**Encoder Mode TI1 and TI2**" and "**Input Filter**" to 15 for both channels
+3. For both timers in "**Parameter Settings**" set "**Prescaler**" to **zero** and "**Counter Period**" (0xffffffff in our case), also in the "**Encoder**" section set "**Encoder Mode**" parameter to "**Encoder Mode TI1 and TI2**"
 
-![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/release/v0.3.0/Images/Encoder.png)
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/TIM2.png)
+![alt text](https://github.com/MobileRoboticsSkoltech/AkulaControl/blob/assets/TIM2_param.png)
 
 # Setting Clion for stm32 development (optional)
 

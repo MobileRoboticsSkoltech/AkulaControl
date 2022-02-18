@@ -232,7 +232,6 @@ dSocketResult Server::smartphoneReadCallback() {
                     ReadTotal = 0;
                     break;
                 default:
-                    ///---TODO: skip some particular errors and terminate on others---///
                     terminate();
                     return dSocketResult::READ_ERROR;
             }
@@ -294,9 +293,6 @@ dSocketResult Server::smartphoneWriteCallback() {
                         WrittenTotal += WrittenBytes;
                         break;
                     default:
-                        ///---TODO: Add proper termination handling---///
-                        //---There could be an error related to disconnection---//
-                        //---Need to fix dSocket in the future---//
                         terminate();
                         return dSocketResult::WRITE_ERROR;
                 }
@@ -310,7 +306,12 @@ dSocketResult Server::smartphoneWriteCallback() {
 
     return dSocketResult::SUCCESS;
 }
-
+/**
+ * @description
+ * Function is used for sending data to a ROS node. Most of the time in sleeps on the conditional variable until
+ * awaken by any thread. Encryption can also be done in this function
+ * @return Returns dSocket state for proper termination in case of connection failure
+ */
 dSocketResult Server::sensorWriteCallback() {
     uint8_t Packet[mPacketSize];
     std::unique_lock <std::mutex> Lock(mSensorWriteMutex);
@@ -335,9 +336,6 @@ dSocketResult Server::sensorWriteCallback() {
                     WrittenTotal += WrittenBytes;
                     break;
                 default:
-                    ///---TODO: Add proper termination handling---///
-                    //---There could be an error related to disconnection---//
-                    //---Need to fix dSocket in the future---//
                     terminate();
                     return dSocketResult::WRITE_ERROR;
             }
@@ -406,10 +404,6 @@ dSocketResult Server::smartphoneProcessCallback() {
                     std::cout << "Smartphone ping" << std::endl;
 
                     break;
-                case SmartphoneHeader::STATUS:
-                    ///---TODO: Add status handling---///
-
-                    break;
                 case SmartphoneHeader::INVALID:
                     std::cerr << "Invalid packet!" << std::endl;
                     break;
@@ -418,6 +412,7 @@ dSocketResult Server::smartphoneProcessCallback() {
                     mMonitorSTM -> sendLatencyTest();
 
                     break;
+                case SmartphoneHeader::STATUS:
                 case SmartphoneHeader::DISCONNECTED:
                 case SmartphoneHeader::ENCODER:
                     break;
@@ -566,6 +561,13 @@ bool Server::getSmartphoneWriteBuffer(uint8_t* tBuffer) {
     return true;
 }
 //-----------------------------//
+/**
+ * @description
+ * Function is used for passing data for writing to the local socket connected to a ROS node. Can be called everywhere
+ * asynchronously, as long as it safely puts all the data to the write buffer
+ * @param tBuffer User-specified buffer to copy data from
+ * @return Returns <b>false</b>, if the program is being terminated, and <b>true</b> otherwise
+ */
 bool Server::fillSensorWriteBuffer(const uint8_t* tBuffer) {
     std::unique_lock <std::mutex> Lock(mSensorWriteBufferMutex);
 
@@ -591,6 +593,13 @@ bool Server::fillSensorWriteBuffer(const uint8_t* tBuffer) {
 
     return true;
 };
+/**
+ * @description
+ * Function is used for obtaining data for writing to the local socket inside the write thread. Should not be
+ * used anywhere other than in <b>sensorWriteCallback()</b> function
+ * @param tBuffer Internal buffer from the <b>sensorWriteCallback()</b> function
+ * @return Returns <b>false</b>, if the program is being terminated, and <b>true</b> otherwise
+ */
 bool Server::getSensorWriteBuffer(uint8_t* tBuffer) {
     std::unique_lock <std::mutex> Lock(mSensorWriteBufferMutex);
 
@@ -771,7 +780,10 @@ void Server::serialCallback() {
     }
 }
 
-///---TODO: reading data without connection can create vulnerability - fix it---///
+/**
+ * @description
+ * This function is used to process the data obtained from stm32 board through serial port
+ */
 void Server::serialDataCallback() {
     if (mMessengerSTM == nullptr) {
         return;
