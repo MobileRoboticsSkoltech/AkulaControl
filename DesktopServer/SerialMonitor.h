@@ -16,7 +16,6 @@ struct SerialMessenger {
     uint8_t*                    mBuffer         = nullptr;
 };
 //-----------------------------//
-///---TODO: maybe it's better to clear read buffer before processing packet---///
 /**
  * @description
  * The class implements methods and functionality for communication with a serial device for a
@@ -67,7 +66,6 @@ private:
     SerialConnector*                            mConnector                  = nullptr;
     SerialMessenger*                            mMessenger                  = nullptr;
 
-    ///---TODO: change future return value---///
     std::future <void>                          mTimerThread;
     uint32_t                                    mTimerSleepIntervalMs       = 0;
     uint32_t                                    mSerialTimeout              = 0;

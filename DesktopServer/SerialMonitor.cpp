@@ -35,7 +35,6 @@ SerialMonitor::~SerialMonitor() {
     delete[](mWriteBuffer);
 }
 //-----------------------------//
-///---TODO: add timeout to re-enable connection procedure and send timeout state to the smartphone---///
 /**
  * @description
  * The function is the main loop for serial communication, there connection to the serial port is established and
@@ -59,7 +58,6 @@ void SerialMonitor::startSerialLoop() {
     mTimerThread = std::async(std::launch::async, &SerialMonitor::timerCallback, this);
 
     while (mRunning.load()) {
-        ///---TODO: Move timeout value to the yaml config---///
         if (!mConnected.load()) {
             if ((ReadBytes = mConnector -> readSerial(mReadBuffer)) > 0) {
                 memcpy(&ReadTag, mReadBuffer, 4);
@@ -108,7 +106,6 @@ void SerialMonitor::startSerialLoop() {
                         break;
                     case PacketType::INVALID:
                         {
-                            ///---WTF is this?!---///
                             uint32_t Tag;
                             memcpy(&Tag, mReadBuffer + 4, 4);
                             std::cerr << "Invalid " << Tag << std::endl;
@@ -178,7 +175,6 @@ bool SerialMonitor::isConnected() {
  * checks if it is necessary to send ping to the smartphone.
  */
 void SerialMonitor::timerCallback() {
-    ///---TODO: need to catch write exception somehow---///
     while (mRunning.load()) {
         mPingDuration = std::chrono::system_clock::now() - mLastPing;
 
